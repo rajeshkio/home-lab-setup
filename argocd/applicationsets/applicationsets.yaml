@@ -10,7 +10,7 @@ spec:
         - cluster: rancher-master 
           app-name: longhorn 
           chart: longhorn
-          targetRevision 1.8.0:
+          targetRevision: 1.8.0
           repoURL: 'https://charts.longhorn.io'
           namespace: longhorn-system
   template:
