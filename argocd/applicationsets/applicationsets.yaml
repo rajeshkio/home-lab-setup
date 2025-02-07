@@ -24,7 +24,7 @@ spec:
           targetRevision: '{{targetRevision}}'
           helm:
             valueFiles:
-              - '$values/applications/{{cluster}}/{{app-name}}/values.yaml'
+              - '$values/{{cluster}}/{{app-name}}/values.yaml'
           chart: '{{chart}}'
         - repoURL: 'https://github.com/rajeshkio/home-lab-setup.git'
           targetRevision: main

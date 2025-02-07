@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/rajeshkio/home-lab-setup.git'
     targetRevision: HEAD
-    path: applicationset  
+    path: argocd/applicationsets 
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
