@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: main
+  namespace: argo
+spec:
+  generators:
+  - list:
+      elements:
+        - cluster: rancher-master 
+          app-name: longhorn 
+          chart: longhorn
+          targetRevision 1.8.0:
+          repoURL: 'https://charts.longhorn.io'
+          namespace: longhorn-system
+  template:
+    metadata:
+      name: '{{cluster}}-{{app-name}}'
+      namespace: argo
+    spec:
+      project: default
+      sources:
+        - repoURL: '{{repoURL}}'
+          targetRevision: '{{targetRevision}}'
+          helm:
+            valueFiles:
+              - '$values/applications/{{cluster}}/{{app-name}}/values.yaml'
+          chart: '{{chart}}'
+        - repoURL: 'https://github.com/rajeshkio/home-lab-setup.git'
+          targetRevision: main
+          ref: values
+      destination:
+        name: '{{cluster}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+        automated:
+          prune: true
+          selfHeal: true

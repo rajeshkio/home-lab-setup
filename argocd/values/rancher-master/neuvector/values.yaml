@@ -1,0 +1,32 @@
+tag: 5.4.0
+rbac: true
+global:
+  cattle:
+    url: https://rancher.rajesh-kumar.in/k8s/clusters/c-m-bx76dsgg 
+controller:
+  apisvc:
+    type: ClusterIP 
+  replicas: 1
+  federation:
+    managedsvc:
+      type: ClusterIP
+  ranchersso:
+    enabled: true
+  env:
+    - name: CTRL_EN_ICMP_POLICY
+      value: "1"
+  affinity: {}
+  pvc:
+    enabled: false
+    storageClass: longhorn
+    capacity: 2Gi
+manager:
+  svc:
+    type: ClusterIP 
+  env:
+    ssl: true
+cve:
+  scanner:
+    replicas: 1
+crdwebhook:
+  enabled: false
