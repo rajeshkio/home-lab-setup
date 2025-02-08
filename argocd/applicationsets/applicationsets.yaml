@@ -7,7 +7,7 @@ spec:
   generators:
   - list:
       elements:
-        - cluster: rancher-master 
+        - cluster: k3s-server 
           app-name: longhorn 
           chart: longhorn
           targetRevision: 1.8.0
