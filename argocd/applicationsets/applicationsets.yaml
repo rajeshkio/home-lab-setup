@@ -25,12 +25,6 @@ spec:
           targetRevision: 2.10.2 
           repoURL: 'https://charts.rancher.com/server-charts/prime'
           namespace: cattle-system
-        - cluster: rancher-master 
-          app-name: longhorn 
-          chart: longhorn
-          targetRevision: 1.8.0
-          repoURL: 'https://charts.longhorn.io'
-          namespace: longhorn-system
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
