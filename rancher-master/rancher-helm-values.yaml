@@ -1,0 +1,7 @@
+hostname: rancher.rajesh-kumar.in
+ingress:
+  enabled: false
+replicas: 1
+tls: external
+bootstrapPassword: "password"
+agentTLSMode: "strict"

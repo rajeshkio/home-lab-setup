@@ -1,7 +1,4 @@
 rbac: true
-global:
-  cattle:
-    url: https://rancher.rajesh-kumar.in/k8s/clusters/c-m-bx76dsgg 
 controller:
   apisvc:
     type: ClusterIP 
@@ -19,13 +16,6 @@ controller:
     enabled: false
     storageClass: longhorn
     capacity: 2Gi
-manager:
-  svc:
-    type: ClusterIP 
-  env:
-    ssl: true
 cve:
   scanner:
     replicas: 2
-crdwebhook:
-  enabled: false
