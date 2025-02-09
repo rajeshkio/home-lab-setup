@@ -1,0 +1,35 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: http-route
+  namespace: argo
+spec:
+  generators:
+  - list:
+      elements:
+        - cluster: rancher-master 
+          app-name: rancher-httproute
+          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
+          namespace: cattle-system
+  template:
+    metadata:
+      name: '{{cluster}}-{{app-name}}'
+      namespace: argo
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/rajeshkio/home-lab-setup.git
+          targetRevision: HEAD
+          path: 'argocd/kustomize/overlays/{{cluster}}/{{app-name}}'
+      destination:
+        name: '{{cluster}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+        automated:
+          prune: true
+          selfHeal: true
