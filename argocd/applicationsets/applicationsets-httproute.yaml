@@ -12,7 +12,7 @@ spec:
           app-name: rancher-httproute
           path: argocd/kustomize/overlays/rancher-master/rancher-httproute
           namespace: cattle-system
-        - cluster: rancher-master 
+        - cluster: k3s-server 
           app-name: neuvector-httproute
           path: argocd/kustomize/overlays/k3s-server/neuvector-httproute
           namespace: cattle-system
