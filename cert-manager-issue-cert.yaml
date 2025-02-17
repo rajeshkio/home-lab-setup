@@ -1,0 +1,33 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-rajesh-wildcard
+  namespace: cert-manager
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    #server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: rk90229@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-route53-dns-private
+    solvers:
+    - selector:
+        dnsZones:
+        - "*.rajesh-kumar.in"
+      dns01:
+        route53: {}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rajesh-tls-cert
+  namespace: cert-manager
+spec:
+  secretName: rajesh-tls-cert
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-rajesh-wildcard
+  commonName: "*.rajesh-kumar.in"
+  dnsNames:
+  - "*.rajesh-kumar.in"
