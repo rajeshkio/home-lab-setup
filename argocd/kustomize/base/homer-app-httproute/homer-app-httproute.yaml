@@ -15,5 +15,5 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: homer-app 
+    - name: rancher-master-homer-app 
       port: 8080

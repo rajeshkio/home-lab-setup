@@ -25,6 +25,12 @@ spec:
           targetRevision: 2.10.2 
           repoURL: 'https://charts.rancher.com/server-charts/prime'
           namespace: cattle-system
+        - cluster: rancher-master 
+          app-name: homer-app 
+          chart: homer
+          targetRevision: 8.2.3 
+          repoURL: 'https://djjudas21.github.io/charts/'
+          namespace: homer-app 
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'

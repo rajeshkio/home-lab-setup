@@ -108,13 +108,13 @@ services:
         keywords: "Rancher application"
         url: "https://rancher.rajesh-kumar.in/"
         target: "_blank" # optional html a tag target attribute
-   - name: "Harvester Server"
-     icon: "fas fa-cloud"
-     items:
-       - name: "Harvester"
-         logo: "assets/tools/sample.png"
-         subtitle: "Harvester Node"
-         tag: "node"
-         keywords" "Harvester server"
-         url: "https://harvester.rajesh-kumar.in"
-         target: "_blank"
+  - name: "Harvester Server"
+    icon: "fas fa-cloud"
+    items:
+      - name: "Harvester"
+        logo: "assets/tools/sample.png"
+        subtitle: "Harvester Node"
+        tag: "node"
+        keywords: "Harvester server"
+        url: "https://harvester.rajesh-kumar.in"
+        target: "_blank"
