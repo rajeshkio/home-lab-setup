@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-dns
+  template:
+    metadata:
+      labels:
+        app: external-dns
+    spec:
+      serviceAccountName: external-dns
+      shareProcessNamespace: true
+      initContainers:
+        - name: generate-aws-creds
+          image: alpine
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/bin/sh /scripts/generate-aws-crds.sh" 
+          #command: ["/bin/sh","-c","sleep infinity"]
+          volumeMounts:
+            - name: generate-aws-creds-script
+              mountPath: /scripts
+            - name: aws-roles-anywhere-secret
+              mountPath: /etc/aws-roles-anywhere
+            - name: shared-aws-credentials
+              mountPath: /shared-aws-credentials
+              readOnly: false
+      containers:
+        - name: external-dns
+          image: registry.k8s.io/external-dns/external-dns:v0.15.1 
+          args:
+            - --source=service
+            - --source=gateway-httproute
+            - --source=gateway-tlsroute
+            - --domain-filter=rajesh-kumar.in # will make ExternalDNS see only the hosted zones matching provided domain, omit to process all available hosted zones
+            - --provider=aws
+            - --aws-zone-type=public # only look at public hosted zones (valid values are public, private or no value for both)
+            - --log-level=debug
+            - --aws-profile=default
+          env:
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /shared-aws-credentials/aws-credentials
+            - name: AWS_DEFAULT_REGION
+              value: ap-south-1
+            - name: AWS_EC2_METADATA_DISABLED 
+              value: "true"
+          volumeMounts:
+            - name: shared-aws-credentials
+              mountPath: /shared-aws-credentials
+              readOnly: true
+        - name: aws-credentials-refresher
+          image: alpine
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "/bin/sh /script-aws/start-aws-credentials-refresh.sh" 
+          volumeMounts:
+            - name: shared-aws-credentials
+              mountPath: /shared-aws-credentials
+              readOnly: false
+            - name: generate-aws-creds-script
+              mountPath: /scripts
+            - name: start-aws-credentials-refresh 
+              mountPath: /script-aws
+            - name: aws-roles-anywhere-secret
+              mountPath: /etc/aws-roles-anywhere
+        - name: debug
+          image: busybox
+          command: ["sh", "-c", "sleep infinity"]
+          volumeMounts:
+            - name: shared-aws-credentials
+              mountPath: /shared-aws-credentials
+      volumes:
+        - name: shared-aws-credentials
+          emptyDir: {}
+        - name: generate-aws-creds-script
+          configMap:
+            name: generate-aws-creds-script
+        - name: aws-roles-anywhere-secret
+          secret:
+            secretName: aws-roles-anywhere 
+        - name: start-aws-credentials-refresh
+          configMap:
+            name: start-aws-credentials-refresh 

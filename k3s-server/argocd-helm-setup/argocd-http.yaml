@@ -1,0 +1,20 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argo-http
+  namespace: argo 
+spec:
+  hostnames:
+  - "argo.rajesh-kumar.in"
+  parentRefs:
+  - name: k3s-server-gateway
+    namespace: istio-gateway 
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: argo-argocd-server 
+      port: 80
