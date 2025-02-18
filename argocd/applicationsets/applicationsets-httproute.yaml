@@ -18,7 +18,7 @@ spec:
           namespace: cattle-system
         - cluster: rancher-master 
           app-name: homer-app-httproute
-          path: argocd/kustomize/overlays/k3s-server/homer-app-httproute
+          path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
           namespace: homer-app
   template:
     metadata:
