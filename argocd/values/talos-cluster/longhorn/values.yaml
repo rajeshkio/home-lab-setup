@@ -1,0 +1,8 @@
+persistence:
+  defaultClassReplicaCount: 1
+defaultSettings:
+  defaultReplicaCount: 1
+longhornUI:
+  replicas: 1
+preUpgradeChecker:
+  jobEnabled: false
