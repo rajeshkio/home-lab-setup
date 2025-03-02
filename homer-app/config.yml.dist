@@ -118,3 +118,13 @@ services:
         keywords: "Harvester server"
         url: "https://harvester.rajesh-kumar.in"
         target: "_blank"
+  - name: "RKE2 Cluster Applications"
+    icon: "fas fa-cloud"
+    items:
+      - name: "Suse Observability"
+        logo: "assets/tools/sample.png"
+        subtitle: "Stackstate"
+        tag: "node"
+        keywords: "Suse Observability"
+        url: "https://stackstate.rajesh-kumar.in"
+        target: "_blank"
