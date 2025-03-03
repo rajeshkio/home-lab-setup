@@ -27,6 +27,8 @@ manager:
 cve:
   scanner:
     replicas: 1
+  adapter:
+    enabled: true
 crdwebhook:
   enabled: false
 enforcer:
