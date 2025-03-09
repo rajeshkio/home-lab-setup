@@ -31,12 +31,6 @@ spec:
           targetRevision: 8.2.3 
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
-        - cluster: talos-cluster 
-          app-name: longhorn 
-          chart: longhorn
-          targetRevision: 1.8.0
-          repoURL: 'https://charts.longhorn.io'
-          namespace: longhorn-system
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'

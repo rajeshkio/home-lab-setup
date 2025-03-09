@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: gotenberg
+spec: {}
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: gotenberg
+  creationTimestamp: null
+  labels:
+    app: gotenberg
+  name: gotenberg
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gotenberg
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: gotenberg
+    spec:
+      containers:
+      - image: gotenberg/gotenberg:8.17.3
+        name: gotenberg
+        ports:
+        - containerPort: 3000
+        resources: {}
+status: {}

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pixiedocs
+  namespace: gotenberg
+  labels:
+    app: pixiedocs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pixiedocs
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: pixiedocs
+    spec:
+      containers:
+      - name: pixiedocs
+        image: rk90229/pixiedocs:v1.1.0  # Update with your actual image repository
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: GOTENBERG_URL
+          value: "http://gotenberg:80"  # Internal Kubernetes service name
+        - name: PIXIEDOCS_URL
+          value: "http://pixiedocs:80"  # Internal Kubernetes service name
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        fsGroup: 1000
