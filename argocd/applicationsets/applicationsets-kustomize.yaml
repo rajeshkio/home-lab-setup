@@ -12,6 +12,10 @@ spec:
           app-name: pixiedocs-app
           path: argocd/kustomize/overlays/rke2-cluster/pixiedocs-app/
           namespace: gotenberg
+        - cluster: rke2-cluster 
+          app-name: neuvector-httproute
+          path: argocd/kustomize/overlays/rke2-cluster/neuvector-httproute/
+          namespace: cattle-neuvector-system
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'

@@ -6,9 +6,9 @@ metadata:
   namespace: cattle-neuvector-system
 spec:
   hostnames:
-  - "nv.rajesh-kumar.in"
+  - "nv-rke2.rajesh-kumar.in"
   parentRefs:
-  - name: k3s-server-gateway 
+  - name: rke2-server-gateway 
     namespace: istio-gateway
   rules:
   - matches:
@@ -18,4 +18,3 @@ spec:
     backendRefs:
     - name: neuvector-service-webui 
       port: 8443
-
