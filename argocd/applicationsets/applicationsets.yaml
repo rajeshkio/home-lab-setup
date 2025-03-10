@@ -13,6 +13,18 @@ spec:
           targetRevision: 2.8.4 
           repoURL: 'https://neuvector.github.io/neuvector-helm/'
           namespace: cattle-neuvector-system
+        - cluster: k3s-server 
+          app-name: istio-base 
+          chart: base
+          targetRevision: 1.25.0
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
+        - cluster: k3s-server 
+          app-name: istiod 
+          chart: istiod
+          targetRevision: 1.25.0
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
         - cluster: rancher-master 
           app-name: rancher-prime 
           chart: rancher

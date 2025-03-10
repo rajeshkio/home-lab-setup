@@ -20,6 +20,10 @@ spec:
           app-name: neuvector-configmaps
           path: argocd/kustomize/overlays/k3s-server/neuvector-configmaps/
           namespace: cattle-neuvector-system
+        - cluster: k3s-server 
+          app-name: istio-config
+          path: argocd/kustomize/overlays/k3s-server/istio-config/
+          namespace: istio-system
         - cluster: rancher-master 
           app-name: rancher-httproute
           path: argocd/kustomize/overlays/rancher-master/rancher-httproute
