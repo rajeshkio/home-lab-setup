@@ -16,14 +16,14 @@ controller:
       value: "1"
   affinity: {}
   pvc:
-    enabled: false
+    enabled: true
     storageClass: longhorn
     capacity: 2Gi
 manager:
   svc:
     type: ClusterIP 
   env:
-    ssl: false 
+    ssl: true
 cve:
   scanner:
     replicas: 1
