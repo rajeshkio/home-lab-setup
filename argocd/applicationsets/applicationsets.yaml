@@ -8,12 +8,6 @@ spec:
   - list:
       elements:
         - cluster: k3s-server 
-          app-name: longhorn 
-          chart: longhorn
-          targetRevision: 1.8.0
-          repoURL: 'https://charts.longhorn.io'
-          namespace: longhorn-system
-        - cluster: k3s-server 
           app-name: neuvector 
           chart: core
           targetRevision: 2.8.4 
