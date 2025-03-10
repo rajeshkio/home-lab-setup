@@ -7,12 +7,12 @@ spec:
   generators:
   - list:
       elements:
-        - cluster: k3s-server 
-          app-name: neuvector 
-          chart: core
-          targetRevision: 2.8.4 
-          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-          namespace: cattle-neuvector-system
+#        - cluster: k3s-server 
+#          app-name: neuvector 
+#          chart: core
+#          targetRevision: 2.8.4 
+#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+#          namespace: cattle-neuvector-system
         - cluster: rancher-master 
           app-name: rancher-prime 
           chart: rancher
