@@ -17,8 +17,6 @@ controller:
   affinity: {}
   pvc:
     enabled: true
-    storageClass: longhorn
-    capacity: 2Gi
 manager:
   svc:
     type: ClusterIP 
