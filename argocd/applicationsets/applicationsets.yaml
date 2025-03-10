@@ -37,12 +37,12 @@ spec:
           targetRevision: 8.2.3 
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
-#        - cluster: rke2-cluster 
-#          app-name: neuvector 
-#          chart: core
-#          targetRevision: 2.8.4 
-#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-#          namespace: cattle-neuvector-system
+        - cluster: rke2-cluster 
+          app-name: neuvector 
+          chart: core
+          targetRevision: 2.8.4 
+          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+          namespace: cattle-neuvector-system
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
