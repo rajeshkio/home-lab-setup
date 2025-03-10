@@ -5,11 +5,6 @@ metadata:
   name: neuvector-httproute
   namespace: cattle-neuvector-system
 spec:
-  hostnames:
-  - "nv-rke2.rajesh-kumar.in"
-  parentRefs:
-  - name: rke2-server-gateway 
-    namespace: istio-gateway
   rules:
   - matches:
     - path:
