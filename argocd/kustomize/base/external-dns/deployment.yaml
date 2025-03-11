@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: external-dns
+  template:
+    metadata:
+      labels:
+        app: external-dns
+    spec:
+      serviceAccountName: external-dns
+      volumes:
+      - name: aws-roles-anywhere 
+        secret:
+          secretName: aws-roles-anywhere 
+          defaultMode: 0400
+      - name: shared-aws-credentials
+        emptyDir: {}
+      - name: generate-aws-creds-script
+        secret:
+          secretName: aws-roles-anywhere 
+          items:
+          - key: generate-aws-creds.sh
+            path: generate-aws-creds.sh
+          defaultMode: 0500
+      - name: aws-creds-refresh-script
+        secret:
+          secretName: aws-roles-anywhere 
+          items:
+          - key: refresh-credentials.sh
+            path: start-aws-credentials-refresh.sh
+          defaultMode: 0500
+      initContainers:
+      - name: generate-aws-creds
+        image: alpine:latest
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "/bin/sh /scripts/generate-aws-creds.sh"
+        env:
+        - name: AWS_REGION
+          value: ap-south-1
+        volumeMounts:
+        - name: generate-aws-creds-script
+          mountPath: /scripts
+        - name: aws-roles-anywhere 
+          mountPath: /etc/aws-roles-anywhere
+        - name: shared-aws-credentials
+          mountPath: /shared-aws-credentials
+      containers:
+      - name: external-dns
+        image: registry.k8s.io/external-dns/external-dns:v0.15.1
+        args:
+        - --source=gateway-httproute
+        - --source=gateway-tlsroute
+        - --source=service
+        - --domain-filter=rajesh-kumar.in
+        - --provider=aws
+        - --aws-zone-type=public
+        - --log-level=debug
+        - --aws-profile=default
+        env:
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: /shared-aws-credentials/aws-credentials
+        - name: AWS_DEFAULT_REGION
+          value: ap-south-1
+        - name: AWS_EC2_METADATA_DISABLED
+          value: "true"
+        volumeMounts:
+        - name: shared-aws-credentials
+          mountPath: /shared-aws-credentials
+          readOnly: true
+      - name: aws-credentials-refresher
+        image: alpine:latest
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "/bin/sh /script-aws/start-aws-credentials-refresh.sh"
+        env:
+        - name: AWS_REGION
+          value: ap-south-1
+        volumeMounts:
+        - name: aws-creds-refresh-script
+          mountPath: /script-aws
+        - name: generate-aws-creds-script
+          mountPath: /scripts
+        - name: aws-roles-anywhere 
+          mountPath: /etc/aws-roles-anywhere
+        - name: shared-aws-credentials
+          mountPath: /shared-aws-credentials

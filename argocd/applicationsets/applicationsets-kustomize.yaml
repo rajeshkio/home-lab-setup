@@ -32,6 +32,10 @@ spec:
           app-name: rancher-httproute
           path: argocd/kustomize/overlays/rancher-master/rancher-httproute
           namespace: cattle-system
+        - cluster: k3s-server 
+          app-name: external-dns
+          path: argocd/kustomize/overlays/k3s-server/external-dns/
+          namespace: external-dns
         - cluster: rancher-master 
           app-name: homer-app-httproute
           path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
