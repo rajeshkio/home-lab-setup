@@ -31,6 +31,12 @@ spec:
           targetRevision: v1.17.1 
           repoURL: 'https://charts.jetstack.io'
           namespace: cert-manager
+        - cluster: k3s-server 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.14.4 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
         - cluster: rancher-master 
           app-name: rancher-prime 
           chart: rancher
@@ -43,12 +49,24 @@ spec:
           targetRevision: 8.2.3 
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
+        - cluster: rancher-master 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.14.4 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
         - cluster: rke2-cluster 
           app-name: neuvector 
           chart: core
           targetRevision: 2.8.4 
           repoURL: 'https://neuvector.github.io/neuvector-helm/'
           namespace: cattle-neuvector-system
+        - cluster: rke2-cluster 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.14.4 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
