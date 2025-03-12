@@ -28,6 +28,10 @@ spec:
           app-name: kiali-httproute
           path: argocd/kustomize/overlays/k3s-server/kiali-httproute/
           namespace: istio-system
+        - cluster: k3s-server 
+          app-name: vault-cert-sync-job
+          path: argocd/kustomize/overlays/k3s-server/vault-cert-sync-job/
+          namespace: cert-manager
         - cluster: rancher-master 
           app-name: rancher-httproute
           path: argocd/kustomize/overlays/rancher-master/rancher-httproute

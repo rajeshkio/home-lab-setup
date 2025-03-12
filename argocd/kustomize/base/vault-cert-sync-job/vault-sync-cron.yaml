@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sync-cert-to-vault
+spec:
+  schedule: "*/5 * * * *"  # Run every 5 minutes
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cert-pusher
+          restartPolicy: OnFailure
+          containers:  # restartPolicy should not be here for Deployments
+          - name: vault-pusher
+            image: hashicorp/vault:latest 
+            command:
+            - /bin/sh
+            - -c
+            - |
+              TLS_CERT=$(cat /tls/tls.crt)
+              TLS_KEY=$(cat /tls/tls.key)	
+              export VAULT_TOKEN="$VAULT_ROOT_TOKEN"
+              
+              MAX_RETRIES=10
+              RETRY_COUNT=0
+              SUCCESS=false
+    
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
+                if vault kv put -mount=kv $TLS_SECRET_NAME tls.cert="$TLS_CERT" tls.key="$TLS_KEY"; then
+                  echo "Secret successfully updated in Vault"
+                  SUCCESS=true
+                else
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                    echo "Failed to update secret, retrying in 5 seconds (attempt $RETRY_COUNT of $MAX_RETRIES)..."
+                    sleep 5
+                  else
+                    echo "Failed to update secret after $MAX_RETRIES attempts"
+                    exit 1
+                  fi
+                fi
+              done
+            env:
+            - name: VAULT_ADDR
+              value: "https://vault.rajesh-kumar.in"
+            - name: TLS_SECRET_NAME
+              value: rajesh-tls-cert
+            - name: VAULT_ROOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vault-token 
+                  key: token
+            volumeMounts:
+            - name: tls-secret
+              mountPath: /tls
+              readOnly: true
+          volumes:
+          - name: tls-secret
+            secret:
+              secretName: rajesh-tls-cert
