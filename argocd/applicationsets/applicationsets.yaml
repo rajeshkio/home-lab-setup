@@ -25,6 +25,12 @@ spec:
           targetRevision: 1.25.0
           repoURL: 'https://istio-release.storage.googleapis.com/charts'
           namespace: istio-system
+        - cluster: k3s-server 
+          app-name: cert-manager 
+          chart: cert-manager
+          targetRevision: v1.17.1 
+          repoURL: 'https://charts.jetstack.io'
+          namespace: cert-manager
         - cluster: rancher-master 
           app-name: rancher-prime 
           chart: rancher
