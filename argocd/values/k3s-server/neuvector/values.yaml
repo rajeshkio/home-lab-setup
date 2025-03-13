@@ -3,6 +3,8 @@ global:
   cattle:
     url: https://rancher.rajesh-kumar.in/k8s/clusters/c-m-bx76dsgg 
 controller:
+  nodeSelector: 
+    beta.kubernetes.io/arch: amd64
   apisvc:
     type: ClusterIP 
   replicas: 1
