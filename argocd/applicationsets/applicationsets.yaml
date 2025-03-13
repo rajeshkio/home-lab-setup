@@ -26,12 +26,6 @@ spec:
           repoURL: 'https://istio-release.storage.googleapis.com/charts'
           namespace: istio-system
         - cluster: k3s-server 
-          app-name: cert-manager 
-          chart: cert-manager
-          targetRevision: v1.17.1 
-          repoURL: 'https://charts.jetstack.io'
-          namespace: cert-manager
-        - cluster: k3s-server 
           app-name: external-secrets 
           chart: external-secrets 
           targetRevision: 0.14.4 
