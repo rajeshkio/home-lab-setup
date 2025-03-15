@@ -9,4 +9,5 @@ resources:
 - clusterrolebinding.yaml
 - deployment.yaml
 - externalsecret.yaml
+- experimental-install.yaml
 
