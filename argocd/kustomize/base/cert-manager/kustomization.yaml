@@ -6,4 +6,6 @@ resources:
 - deployment.yaml
 - externalsecret.yaml
 - clusterIssuer.yaml
+- sa-role-binding.yaml
+- crds.yaml
 
