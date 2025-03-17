@@ -40,10 +40,10 @@ spec:
           app-name: rancher-httproute
           path: argocd/kustomize/overlays/rancher-master/rancher-httproute
           namespace: cattle-system
-        - cluster: rancher-master 
-          app-name: cert-manager 
-          path: argocd/kustomize/overlays/rancher-master/cert-manager
-          namespace: cert-manager
+#        - cluster: rancher-master 
+#          app-name: cert-manager 
+#          path: argocd/kustomize/overlays/rancher-master/cert-manager
+#          namespace: cert-manager
         - cluster: k3s-server 
           app-name: external-dns
           path: argocd/kustomize/overlays/k3s-server/external-dns/
