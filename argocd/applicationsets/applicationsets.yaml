@@ -43,12 +43,12 @@ spec:
           targetRevision: 8.2.3 
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
-      #  - cluster: rancher-master 
-      #    app-name: external-secrets 
-      #    chart: external-secrets 
-      #    targetRevision: 0.14.4 
-      #    repoURL: 'https://charts.external-secrets.io'
-      #    namespace: external-secrets
+        #- cluster: rancher-master 
+        #  app-name: external-secrets 
+        #  chart: external-secrets 
+        #  targetRevision: 0.14.4 
+        #  repoURL: 'https://charts.external-secrets.io'
+        #  namespace: external-secrets
         - cluster: rke2-cluster 
           app-name: neuvector 
           chart: core
