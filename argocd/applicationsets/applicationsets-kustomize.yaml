@@ -48,10 +48,6 @@ spec:
           app-name: homer-app-httproute
           path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
           namespace: homer-app
-        - cluster: rancher-master 
-          app-name: cert-manager 
-          path: argocd/kustomize/overlays/rancher-master/cert-manager
-          namespace: cert-manager
         - cluster: rke2-cluster 
           app-name: pixiedocs-app
           path: argocd/kustomize/overlays/rke2-cluster/pixiedocs-app/
