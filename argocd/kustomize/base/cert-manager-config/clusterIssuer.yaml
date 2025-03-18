@@ -15,7 +15,8 @@ spec:
         dnsZones:
         - "*.rajesh-kumar.in"
       dns01:
-        route53: {}
+        route53:
+          region: ap-south-1
 
 ---
 apiVersion: cert-manager.io/v1
