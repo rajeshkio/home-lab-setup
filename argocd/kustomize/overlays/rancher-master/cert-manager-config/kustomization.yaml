@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: cert-manager 
 
 resources:
-- ../../../base/cert-manager
+- ../../../base/cert-manager-config
 
 #patchesStrategicMerge:
 #- deployment-patch.yaml

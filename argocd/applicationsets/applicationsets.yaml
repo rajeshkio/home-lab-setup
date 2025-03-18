@@ -32,10 +32,10 @@ spec:
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
         - cluster: rancher-master 
+          repoURL: 'registry-1.docker.io/bitnamicharts'
+          targetRevision: 1.4.12 
           app-name: cert-manager 
           chart: cert-manager
-          targetRevision: 1.4.12 
-          repoURL: 'https://charts.bitnami.com/bitnami'
           namespace: cert-manager
         - cluster: rancher-master 
           app-name: rancher-prime 
