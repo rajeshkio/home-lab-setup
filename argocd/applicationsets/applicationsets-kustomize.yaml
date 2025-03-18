@@ -40,6 +40,10 @@ spec:
           app-name: cert-manager-config 
           path: argocd/kustomize/overlays/rancher-master/cert-manager-config
           namespace: cert-manager
+        - cluster: rancher-master 
+          app-name: external-secrets-config 
+          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
+          namespace: external-secrets
         - cluster: k3s-server 
           app-name: external-dns
           path: argocd/kustomize/overlays/k3s-server/external-dns/

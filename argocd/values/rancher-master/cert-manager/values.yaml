@@ -3,7 +3,6 @@ controller:
     - name: aws-roles-anywhere
       secret:
         secretName: aws-roles-anywhere
-        defaultMode: 0400
     - name: shared-aws-credentials
       emptyDir: {}
     - name: generate-aws-creds-script
@@ -12,14 +11,12 @@ controller:
         items:
         - key: generate-aws-creds.sh
           path: generate-aws-creds.sh
-          defaultMode: 0500
     - name: aws-creds-refresh-script
       secret:
         secretName: aws-roles-anywhere
         items:
         - key: refresh-credentials.sh
           path: start-aws-credentials-refresh.sh
-          defaultMode: 0500
   
   extraVolumeMounts:
     - name: shared-aws-credentials
