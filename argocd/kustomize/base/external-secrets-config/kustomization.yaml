@@ -6,3 +6,4 @@ resources:
 - namespace.yaml
 - serviceaccount.yaml
 - cluster-secret-store.yaml
+- externalsecret.yaml

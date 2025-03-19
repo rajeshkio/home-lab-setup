@@ -9,16 +9,16 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/mountPath
-      value: "rancher-master"
+      value: "k3s-server"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/role
-      value: "cert-manager"
+      value: "external-secrets"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/name
       value: "external-secrets"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/namespace
-      value: "cert-manager"
+      value: "external-secrets"
   target:
     kind: ClusterSecretStore
     name: vault-backend-access
