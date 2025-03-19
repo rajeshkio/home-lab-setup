@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: external-secrets
 
 resources:
-- namespace.yaml
 - serviceaccount.yaml
 - cluster-secret-store.yaml
 - externalsecret.yaml
