@@ -55,18 +55,18 @@ spec:
           targetRevision: 0.14.4 
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
-#        - cluster: rke2-cluster 
-#          app-name: neuvector 
-#          chart: core
-#          targetRevision: 2.8.4 
-#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-#          namespace: cattle-neuvector-system
-#        - cluster: rke2-cluster 
-#          app-name: external-secrets 
-#          chart: external-secrets 
-#          targetRevision: 0.14.4 
-#          repoURL: 'https://charts.external-secrets.io'
-#          namespace: external-secrets
+        - cluster: rke2-cluster 
+          app-name: neuvector 
+          chart: core
+          targetRevision: 2.8.4 
+          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+          namespace: cattle-neuvector-system
+        - cluster: rke2-cluster 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.14.4 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
