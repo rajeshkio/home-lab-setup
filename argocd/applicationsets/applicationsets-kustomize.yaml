@@ -8,20 +8,20 @@ spec:
   generators:
   - list:
       elements:
-        - cluster: k3s-server 
-          app-name: neuvector-httproute
-          path: argocd/kustomize/overlays/k3s-server/neuvector-httproute
-          namespace: cattle-system
+        # - cluster: k3s-server 
+        #   app-name: neuvector-httproute
+        #   path: argocd/kustomize/overlays/k3s-server/neuvector-httproute
+        #   namespace: cattle-system
 
-        - cluster: k3s-server 
-          app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/k3s-server/neuvector-external-secret/
-          namespace: cattle-neuvector-system
+        # - cluster: k3s-server 
+        #   app-name: neuvector-external-secret
+        #   path: argocd/kustomize/overlays/k3s-server/neuvector-external-secret/
+        #   namespace: cattle-neuvector-system
 
-        - cluster: k3s-server 
-          app-name: neuvector-configmaps
-          path: argocd/kustomize/overlays/k3s-server/neuvector-configmaps/
-          namespace: cattle-neuvector-system
+        # - cluster: k3s-server 
+        #   app-name: neuvector-configmaps
+        #   path: argocd/kustomize/overlays/k3s-server/neuvector-configmaps/
+        #   namespace: cattle-neuvector-system
 
         - cluster: k3s-server 
           app-name: istio-config
