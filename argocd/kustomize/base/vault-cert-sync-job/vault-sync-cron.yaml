@@ -11,7 +11,7 @@ spec:
         spec:
           serviceAccountName: cert-pusher
           restartPolicy: OnFailure
-          containers:  # restartPolicy should not be here for Deployments
+          containers:  
           - name: vault-pusher
             image: hashicorp/vault:latest 
             command:
@@ -19,9 +19,29 @@ spec:
             - -c
             - |
               TLS_CERT=$(cat /tls/tls.crt)
-              TLS_KEY=$(cat /tls/tls.key)	
-              export VAULT_TOKEN="$VAULT_ROOT_TOKEN"
+              TLS_KEY=$(cat /tls/tls.key)
               
+              # Use Kubernetes auth with vault CLI instead of curl
+              echo "Authenticating with Vault using Kubernetes auth..."
+              
+              JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              
+              # Store the JWT in a temp file
+              echo "$JWT" > /tmp/jwt.txt
+              
+              # Login using the correct auth method and path
+              if ! VAULT_TOKEN=$(vault write -field=token auth/rancher-master/login role=cert-pusher jwt=$(cat /tmp/jwt.txt)); then
+                echo "Authentication failed"
+                exit 1
+              fi
+              
+              # Remove temp file
+              rm /tmp/jwt.txt
+ 
+              echo "Successfully authenticated with Vault"
+              export VAULT_TOKEN
+              
+              echo "Attempting to write TLS certificate to Vault..."
               MAX_RETRIES=10
               RETRY_COUNT=0
               SUCCESS=false
@@ -44,13 +64,6 @@ spec:
             env:
             - name: VAULT_ADDR
               value: "https://vault.rajesh-kumar.in"
-            - name: TLS_SECRET_NAME
-              value: rajesh-tls-cert
-            - name: VAULT_ROOT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-token 
-                  key: token
             volumeMounts:
             - name: tls-secret
               mountPath: /tls
