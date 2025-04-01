@@ -8,44 +8,44 @@ spec:
   generators:
   - list:
       elements:
-        # - cluster: k3s-server 
-        #   app-name: neuvector-httproute
-        #   path: argocd/kustomize/overlays/k3s-server/neuvector-httproute
-        #   namespace: cattle-system
+        - cluster: rancher-master 
+          app-name: neuvector-httproute
+          path: argocd/kustomize/overlays/rancher-master/neuvector-httproute
+          namespace: cattle-system
 
-        # - cluster: k3s-server 
-        #   app-name: neuvector-external-secret
-        #   path: argocd/kustomize/overlays/k3s-server/neuvector-external-secret/
-        #   namespace: cattle-neuvector-system
+        - cluster: rancher-master 
+          app-name: neuvector-external-secret
+          path: argocd/kustomize/overlays/rancher-master/neuvector-external-secret/
+          namespace: cattle-neuvector-system
 
-        # - cluster: k3s-server 
-        #   app-name: neuvector-configmaps
-        #   path: argocd/kustomize/overlays/k3s-server/neuvector-configmaps/
-        #   namespace: cattle-neuvector-system
+        - cluster: rancher-master 
+          app-name: neuvector-configmaps
+          path: argocd/kustomize/overlays/rancher-master/neuvector-configmaps/
+          namespace: cattle-neuvector-system
 
-        - cluster: k3s-server 
-          app-name: istio-config
-          path: argocd/kustomize/overlays/k3s-server/istio-config/
-          namespace: istio-system
+       # - cluster: rancher-master 
+       #   app-name: istio-config
+       #   path: argocd/kustomize/overlays/rancher-master/istio-config/
+       #   namespace: istio-system
 
-        - cluster: k3s-server 
-          app-name: kiali-httproute
-          path: argocd/kustomize/overlays/k3s-server/kiali-httproute/
-          namespace: istio-system
+      #  - cluster: rancher-master 
+      #    app-name: kiali-httproute
+      #    path: argocd/kustomize/overlays/rancher-master/kiali-httproute/
+      #    namespace: istio-system
 
-        - cluster: k3s-server 
+        - cluster: rancher-master 
           app-name: vault-cert-sync-job
-          path: argocd/kustomize/overlays/k3s-server/vault-cert-sync-job/
+          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
           namespace: cert-manager
 
-        - cluster: k3s-server 
+        - cluster: rancher-master 
           app-name: external-dns
-          path: argocd/kustomize/overlays/k3s-server/external-dns/
+          path: argocd/kustomize/overlays/rancher-master/external-dns/
           namespace: external-dns
 
-        - cluster: k3s-server 
+        - cluster: rancher-master 
           app-name: external-secrets-config 
-          path: argocd/kustomize/overlays/k3s-server/external-secrets-config
+          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
           namespace: external-secrets
 
         - cluster: rancher-master 
@@ -57,11 +57,6 @@ spec:
           app-name: cert-manager-config 
           path: argocd/kustomize/overlays/rancher-master/cert-manager-config
           namespace: cert-manager
-
-        - cluster: rancher-master 
-          app-name: external-secrets-config 
-          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
-          namespace: external-secrets
 
         - cluster: rancher-master 
           app-name: homer-app-httproute

@@ -8,28 +8,28 @@ spec:
   generators:
   - list:
       elements:
-        # - cluster: k3s-server 
-        #   app-name: neuvector 
-        #   chart: core
-        #   targetRevision: 2.8.4 
-        #   repoURL: 'https://neuvector.github.io/neuvector-helm/'
-        #   namespace: cattle-neuvector-system
+        - cluster: rancher-master 
+          app-name: neuvector 
+          chart: core
+          targetRevision: 2.8.4 
+          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+          namespace: cattle-neuvector-system
 
-        - cluster: k3s-server 
-          app-name: istio-base 
-          chart: base
-          targetRevision: 1.25.0
-          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-          namespace: istio-system
+#        - cluster: rancher-master 
+#          app-name: istio-base 
+#          chart: base
+#          targetRevision: 1.25.0
+#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+#          namespace: istio-system
+#
+#        - cluster: rancher-master 
+#          app-name: istiod 
+#          chart: istiod
+#          targetRevision: 1.25.0
+#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+#          namespace: istio-system
 
-        - cluster: k3s-server 
-          app-name: istiod 
-          chart: istiod
-          targetRevision: 1.25.0
-          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-          namespace: istio-system
-
-        - cluster: k3s-server 
+        - cluster: rancher-master 
           app-name: external-secrets 
           chart: external-secrets 
           targetRevision: 0.14.4 
@@ -46,7 +46,7 @@ spec:
         - cluster: rancher-master 
           app-name: rancher-prime 
           chart: rancher
-          targetRevision: 2.10.2 
+          targetRevision: 2.10.4 
           repoURL: 'https://charts.rancher.com/server-charts/prime'
           namespace: cattle-system
 
@@ -57,12 +57,6 @@ spec:
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
 
-        - cluster: rancher-master 
-          app-name: external-secrets 
-          chart: external-secrets 
-          targetRevision: 0.14.4 
-          repoURL: 'https://charts.external-secrets.io'
-          namespace: external-secrets
 
         - cluster: rke2-cluster 
           app-name: neuvector 
