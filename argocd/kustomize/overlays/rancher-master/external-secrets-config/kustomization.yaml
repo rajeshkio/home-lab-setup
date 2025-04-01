@@ -12,13 +12,13 @@ patches:
       value: "rancher-master"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/role
-      value: "cert-manager"
-    - op: replace
-      path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/name
       value: "external-secrets"
     - op: replace
+      path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/name
+      value: "rancher-master-external-secrets"
+    - op: replace
       path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/namespace
-      value: "cert-manager"
+      value: "external-secrets"
   target:
     kind: ClusterSecretStore
     name: vault-backend-access
