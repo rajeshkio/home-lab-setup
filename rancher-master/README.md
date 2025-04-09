@@ -317,13 +317,12 @@ kubectl apply -f argocd/kustomize/base/external-secrets-config/externalsecret.ya
 Install cert-manager and apply configuration:
 
 ```sh
-helm upgrade --install cert-manager jetstack/cert-manager \
+helm upgrade --install cert-manager bitnami/cert-manager \
   -n cert-manager \
   --create-namespace \
   -f argocd/values/rancher-master/cert-manager/values.yaml
 
 kubectl apply -f argocd/kustomize/base/cert-manager-config/externalsecret.yaml
-kubectl apply -f argocd/kustomize/base/cert-manager-config/clusterIssuer.yaml
 ```
 
 For more information on certificate management with Vault, refer to [this guide](https://medium.com/@rk90229/vault-kubernetes-auth-the-certificate-management-solution-i-wish-id-known-earlier-c90084a4ff10).

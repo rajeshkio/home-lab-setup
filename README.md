@@ -1,1 +1,1 @@
-helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace# Will be updated soon
+# Personal repo to spin up my home lab
