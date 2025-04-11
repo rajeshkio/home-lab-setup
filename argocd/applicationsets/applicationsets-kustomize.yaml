@@ -3,89 +3,94 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: manifest-apps
-  namespace: argo
+  namespace: argocd
 spec:
   generators:
   - list:
       elements:
-        - cluster: rancher-master 
-          app-name: neuvector-httproute
-          path: argocd/kustomize/overlays/rancher-master/neuvector-httproute
-          namespace: cattle-system
+#        - cluster: rancher-master 
+#          app-name: neuvector-httproute
+#          path: argocd/kustomize/overlays/rancher-master/neuvector-httproute
+#          namespace: cattle-system
+#
+#        - cluster: rancher-master 
+#          app-name: neuvector-external-secret
+#          path: argocd/kustomize/overlays/rancher-master/neuvector-external-secret/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: rancher-master 
+#          app-name: neuvector-configmaps
+#          path: argocd/kustomize/overlays/rancher-master/neuvector-configmaps/
+#          namespace: cattle-neuvector-system
+#
+#       # - cluster: rancher-master 
+#       #   app-name: istio-config
+#       #   path: argocd/kustomize/overlays/rancher-master/istio-config/
+#       #   namespace: istio-system
+#
+#      #  - cluster: rancher-master 
+#      #    app-name: kiali-httproute
+#      #    path: argocd/kustomize/overlays/rancher-master/kiali-httproute/
+#      #    namespace: istio-system
+#
+#        - cluster: rancher-master 
+#          app-name: vault-cert-sync-job
+#          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
+#          namespace: cert-manager
+#
+#        - cluster: rancher-master 
+#          app-name: external-dns
+#          path: argocd/kustomize/overlays/rancher-master/external-dns/
+#          namespace: external-dns
+#
+#        - cluster: rancher-master 
+#          app-name: external-secrets-config 
+#          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
+#          namespace: external-secrets
+#
+#        - cluster: rancher-master 
+#          app-name: rancher-httproute
+#          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
+#          namespace: cattle-system
+#
+#        - cluster: rancher-master 
+#          app-name: cert-manager-config 
+#          path: argocd/kustomize/overlays/rancher-master/cert-manager-config
+#          namespace: cert-manager
+#
+#        - cluster: rancher-master 
+#          app-name: homer-app-httproute
+#          path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
+#          namespace: homer-app
+#
+#        - cluster: rke2-cluster 
+#          app-name: pixiedocs-app
+#          path: argocd/kustomize/overlays/rke2-cluster/pixiedocs-app/
+#          namespace: gotenberg
+#
+#        - cluster: rke2-cluster 
+#          app-name: neuvector-external-secret
+#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-external-secret/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: rke2-cluster 
+#          app-name: neuvector-httproute
+#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-httproute/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: rke2-cluster 
+#          app-name: neuvector-configmaps
+#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-configmaps/
+#          namespace: cattle-neuvector-system
 
-        - cluster: rancher-master 
-          app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/rancher-master/neuvector-external-secret/
-          namespace: cattle-neuvector-system
-
-        - cluster: rancher-master 
-          app-name: neuvector-configmaps
-          path: argocd/kustomize/overlays/rancher-master/neuvector-configmaps/
-          namespace: cattle-neuvector-system
-
-       # - cluster: rancher-master 
-       #   app-name: istio-config
-       #   path: argocd/kustomize/overlays/rancher-master/istio-config/
-       #   namespace: istio-system
-
-      #  - cluster: rancher-master 
-      #    app-name: kiali-httproute
-      #    path: argocd/kustomize/overlays/rancher-master/kiali-httproute/
-      #    namespace: istio-system
-
-        - cluster: rancher-master 
-          app-name: vault-cert-sync-job
-          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
-          namespace: cert-manager
-
-        - cluster: rancher-master 
-          app-name: external-dns
-          path: argocd/kustomize/overlays/rancher-master/external-dns/
-          namespace: external-dns
-
-        - cluster: rancher-master 
-          app-name: external-secrets-config 
-          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
-          namespace: external-secrets
-
-        - cluster: rancher-master 
-          app-name: rancher-httproute
-          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
-          namespace: cattle-system
-
-        - cluster: rancher-master 
-          app-name: cert-manager-config 
-          path: argocd/kustomize/overlays/rancher-master/cert-manager-config
-          namespace: cert-manager
-
-        - cluster: rancher-master 
-          app-name: homer-app-httproute
-          path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
-          namespace: homer-app
-
-        - cluster: rke2-cluster 
-          app-name: pixiedocs-app
-          path: argocd/kustomize/overlays/rke2-cluster/pixiedocs-app/
-          namespace: gotenberg
-
-        - cluster: rke2-cluster 
-          app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/rke2-cluster/neuvector-external-secret/
-          namespace: cattle-neuvector-system
-
-        - cluster: rke2-cluster 
-          app-name: neuvector-httproute
-          path: argocd/kustomize/overlays/rke2-cluster/neuvector-httproute/
-          namespace: cattle-neuvector-system
-
-        - cluster: rke2-cluster 
-          app-name: neuvector-configmaps
-          path: argocd/kustomize/overlays/rke2-cluster/neuvector-configmaps/
-          namespace: cattle-neuvector-system
+        - cluster: rancher-master
+          app-name: vault-configs
+          path: argocd/kustomize/overlays/rancher-master/vault-config/
+          namespace: vault  
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
-      namespace: argo
+      namespace: argocd
     spec:
       project: default
       sources:

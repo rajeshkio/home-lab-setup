@@ -1,0 +1,345 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-init
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"  # Run this first
+spec:
+  template:
+    spec:
+      containers:
+      - name: vault-init
+        image: hashicorp/vault:1.19
+        env:
+        - name: VAULT_PREFIX
+          value: "rancher-master"
+        - name: VAULT_REPLICAS
+          value: "3"
+        command:
+        - /bin/sh
+        - -c
+        - | 
+          # Wait for Vault to start
+          until nslookup ${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal.vault.svc.cluster.local; do 
+            echo "Waiting for Vault to start..."
+            sleep 2
+          done
+          sleep 5
+          # Configuration
+          ROOT_FILE="/vault-keys/root-token.txt"
+          UNSEAL_FILE="/vault-keys/unseal-key.txt"
+          VAULT_REPLICAS=${VAULT_REPLICAS:-3}
+          VAULT_PREFIX=${VAULT_PREFIX:-"rancher-master"}  # Changed to match your environment
+          MAX_WAIT_SECONDS=300
+          DEBUG=true  # Set to true to enable debug output
+          
+          # Enable debug output if needed
+          debug() {
+            if [ "$DEBUG" = true ]; then
+              echo "DEBUG: $1"
+            fi
+          }
+          
+          # Function to get the Vault address for a specific replica
+          get_vault_addr() {
+            echo "http://${VAULT_PREFIX}-vault-$1.${VAULT_PREFIX}-vault-internal.vault.svc.cluster.local:8200"
+          }
+          
+          # Test connectivity to Vault pod
+          test_connectivity() {
+            local pod_index=$1
+            local vault_addr=$(get_vault_addr $pod_index)
+            
+            debug "Testing connectivity to ${vault_addr}"
+            VAULT_ADDR=$vault_addr vault status >/dev/null 2>&1
+            local result=$?
+  
+            if [ $result -eq 0 ] || [ $result -eq 2 ]; then
+              # Return code 0 = unsealed, 2 = sealed but reachable
+              return 0  # Can connect
+            else
+              return 1  # Cannot connect
+            fi
+          }
+          
+          # Function to check if a specific Vault pod is initialized
+          is_initialized() {
+            local pod_index=$1
+            local vault_addr=$(get_vault_addr $pod_index)
+            
+            debug "Checking if ${VAULT_PREFIX}-vault-$pod_index is initialized using ${vault_addr}"
+            
+            if ! test_connectivity $pod_index; then
+              debug "Cannot connect to ${VAULT_PREFIX}-vault-$pod_index"
+              return 2  # Cannot connect
+            fi 
+
+            STATUS_JSON=$(VAULT_ADDR=$vault_addr vault status -format=json 2>/dev/null || echo '{"initialized":false}')
+            debug "Status JSON: ${STATUS_JSON}"
+            
+            INITIALIZED=$(echo "$STATUS_JSON" | grep -o '"initialized": *[a-z]*' | grep -o '[a-z]*$')            
+            debug "Initialization status: ${INITIALIZED}"
+            
+            if [ "$INITIALIZED" = "true" ]; then
+              return 0  # Initialized
+            else
+              return 1  # Not initialized
+            fi
+          }
+          
+          # Function to check if a specific Vault pod is sealed
+          is_sealed() {
+            local pod_index=$1
+            local vault_addr=$(get_vault_addr $pod_index)
+            
+            debug "Checking if ${VAULT_PREFIX}-vault-$pod_index is sealed using ${vault_addr}"
+            
+            STATUS_JSON=$(VAULT_ADDR=$vault_addr vault status -format=json 2>/dev/null || echo '{"sealed":true}')
+            debug "Status JSON: ${STATUS_JSON}"
+            
+            SEALED=$(echo "$STATUS_JSON" | grep -o '"sealed": *[a-z]*' | grep -o '[a-z]*$')
+            debug "Sealed status: ${SEALED}"
+            
+            if [ "$SEALED" = "true" ]; then
+              return 0  # Sealed
+            else
+              return 1  # Unsealed
+            fi
+          }
+          
+          # Function to unseal a specific Vault pod
+          unseal_pod() {
+            local pod_index=$1
+            local unseal_key=$2
+            local vault_addr=$(get_vault_addr $pod_index)
+            
+            echo "Unsealing ${VAULT_PREFIX}-vault-$pod_index..."
+            debug "Using VAULT_ADDR=${vault_addr} and unseal key: ${unseal_key:0:3}..."
+            
+            UNSEAL_OUTPUT=$(VAULT_ADDR=$vault_addr vault operator unseal "$unseal_key" 2>&1)
+            UNSEAL_STATUS=$?
+            debug "Unseal command output: ${UNSEAL_OUTPUT}"
+            debug "Unseal command status: ${UNSEAL_STATUS}"
+            
+            if [ $UNSEAL_STATUS -ne 0 ]; then
+              echo "WARNING: Unseal command failed for ${VAULT_PREFIX}-vault-$pod_index with status $UNSEAL_STATUS"
+              echo "Error message: ${UNSEAL_OUTPUT}"
+              return 1
+            fi
+            
+            # Wait a moment before checking seal status
+            sleep 2
+            
+            # Verify the unseal was successful
+            if is_sealed $pod_index; then
+              echo "WARNING: ${VAULT_PREFIX}-vault-$pod_index is still sealed after unseal attempt."
+              return 1
+            else
+              echo "${VAULT_PREFIX}-vault-$pod_index successfully unsealed."
+              return 0
+            fi
+          }
+          
+          # Function to initialize Vault on the first pod
+          initialize_vault() {
+            echo "Initializing Vault on ${VAULT_PREFIX}-vault-0..."
+            VAULT_ADDR=$(get_vault_addr 0)
+            
+            debug "Using VAULT_ADDR=${VAULT_ADDR} for initialization"
+            
+            INIT_OUTPUT=$(VAULT_ADDR=$VAULT_ADDR vault operator init -key-shares=1 -key-threshold=1 2>&1)
+            INIT_STATUS=$?
+            debug "Initialization output: ${INIT_OUTPUT}"
+            debug "Initialization status: ${INIT_STATUS}"
+            
+            if [ $INIT_STATUS -ne 0 ]; then
+              echo "ERROR: Failed to initialize Vault."
+              echo "Error message: ${INIT_OUTPUT}"
+              exit 1
+            fi
+            
+            # Create keys directory if it doesn't exist
+            mkdir -p /vault-keys
+            
+            echo "$INIT_OUTPUT" > /vault-keys/init-output.txt
+            UNSEAL_KEY=$(echo "$INIT_OUTPUT" | grep "Unseal Key 1:" | awk '{print $NF}')
+            ROOT_TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token:" | awk '{print $NF}')
+            
+            debug "Extracted unseal key: ${UNSEAL_KEY:0:3}..."
+            debug "Extracted root token: ${ROOT_TOKEN:0:3}..."
+            
+            # Verify we got the keys
+            if [ -z "$UNSEAL_KEY" ] || [ -z "$ROOT_TOKEN" ]; then
+              echo "ERROR: Failed to extract keys from initialization output."
+              exit 1
+            fi
+            
+            # Save keys to files
+            echo "$UNSEAL_KEY" > "$UNSEAL_FILE"
+            echo "$ROOT_TOKEN" > "$ROOT_FILE"
+            
+            # Set permissions to restrict access
+            chmod 600 "$UNSEAL_FILE" "$ROOT_FILE" /vault-keys/init-output.txt
+            
+            echo "Vault initialization complete. Keys saved."
+            return 0
+          }
+          
+          # Function to wait for initialization to propagate to other pods
+          wait_for_initialization() {
+            local start_time=$(date +%s)
+            local current_time=$start_time
+            local timeout_time=$((start_time + MAX_WAIT_SECONDS))
+            
+            echo "Waiting for initialization to propagate to all Vault pods..."
+            
+            while [ $current_time -lt $timeout_time ]; do
+              local all_initialized=true
+              
+              for i in $(seq 0 $((VAULT_REPLICAS - 1))); do
+                init_status=$(is_initialized $i; echo $?)
+                debug "Pod ${VAULT_PREFIX}-vault-$i initialization status: $init_status"
+                
+                # Skip pods we can't connect to yet
+                if [ "$init_status" = "2" ]; then
+                  echo "Pod ${VAULT_PREFIX}-vault-$i not reachable yet, will retry..."
+                  all_initialized=false
+                  break
+                elif [ "$init_status" = "1" ]; then
+                  all_initialized=false
+                  echo "Pod ${VAULT_PREFIX}-vault-$i not yet initialized, waiting..."
+                  break
+                fi
+              done
+              
+              if $all_initialized; then
+                echo "All pods successfully detected initialization."
+                return 0
+              fi
+              
+              sleep 5
+              current_time=$(date +%s)
+            done
+            
+            echo "WARNING: Timeout waiting for all pods to detect initialization."
+            return 1
+          }
+          
+          # Main script logic
+          echo "Starting Vault initialization and unseal process..."
+          
+          # Print environment details for debugging
+          debug "Environment details:"
+          debug "VAULT_PREFIX: ${VAULT_PREFIX}"
+          debug "VAULT_REPLICAS: ${VAULT_REPLICAS}"
+          debug "Pod 0 address: $(get_vault_addr 0)"
+          
+          # Check if we have existing keys
+          if [ -s "$UNSEAL_FILE" ] && grep -q '[^[:space:]]' "$UNSEAL_FILE" ]; then
+            echo "Found existing unseal key."
+            UNSEAL_KEY=$(cat "$UNSEAL_FILE")
+            debug "Using existing unseal key: ${UNSEAL_KEY:0:3}..."
+          else
+            UNSEAL_KEY=""
+            echo "No existing unseal key found."
+          fi
+          
+          # Wait for the first pod to be reachable
+          max_attempts=20
+          attempt=1
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt/$max_attempts: Checking connectivity to ${VAULT_PREFIX}-vault-0..."
+            if test_connectivity 0; then
+              echo "Successfully connected to ${VAULT_PREFIX}-vault-0"
+              break
+            fi
+  
+            if [ $attempt -eq $max_attempts ]; then
+              echo "ERROR: Cannot reach ${VAULT_PREFIX}-vault-0 after $max_attempts attempts."
+              exit 1
+            fi
+  
+            echo "Cannot reach ${VAULT_PREFIX}-vault-0, waiting before retry..."
+            sleep 5
+            attempt=$((attempt + 1))
+          done
+          
+          # Check if the first pod is initialized
+          init_status=$(is_initialized 0; echo $?)
+          debug "Pod 0 initialization status: $init_status"
+          
+          if [ "$init_status" = "0" ]; then
+            echo "${VAULT_PREFIX}-vault-0 is already initialized."
+            
+            # If we don't have the key but the system is initialized, we can't proceed with unsealing
+            if [ -z "$UNSEAL_KEY" ]; then
+              echo "ERROR: Vault is initialized but no unseal key found. Cannot proceed with automatic unsealing."
+              exit 1
+            fi
+          else
+            echo "${VAULT_PREFIX}-vault-0 is not initialized."
+            
+            # Initialize Vault on the first pod
+            initialize_vault
+            UNSEAL_KEY=$(cat "$UNSEAL_FILE")
+            
+            # Unseal the first pod
+            unseal_pod 0 "$UNSEAL_KEY"
+          fi
+          
+          # Now wait for initialization to propagate to other pods
+          wait_for_initialization
+          
+          # Attempt to unseal all pods
+          echo "Attempting to unseal all Vault pods..."
+          for i in $(seq 0 $((VAULT_REPLICAS - 1))); do
+            if is_sealed $i; then
+              echo "${VAULT_PREFIX}-vault-$i is sealed. Unsealing..."
+              unseal_pod $i "$UNSEAL_KEY"
+            else
+              echo "${VAULT_PREFIX}-vault-$i is already unsealed."
+            fi
+          done
+          
+          echo "Vault initialization and unseal process completed."
+          exit 0
+        volumeMounts:
+        - name: vault-keys
+          mountPath: /vault-keys
+      volumes:
+      - name: vault-keys
+        persistentVolumeClaim:
+          claimName: vault-keys
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-init
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-init-role
+  namespace: vault
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-init-rolebinding
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vault-init-role
+subjects:
+- kind: ServiceAccount
+  name: vault-init
+  namespace: vault

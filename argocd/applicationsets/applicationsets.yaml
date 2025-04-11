@@ -2,19 +2,19 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: main
-  namespace: argo
+  namespace: argocd
 
 spec:
   generators:
   - list:
       elements:
-        - cluster: rancher-master 
-          app-name: neuvector 
-          chart: core
-          targetRevision: 2.8.4 
-          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-          namespace: cattle-neuvector-system
-
+#        - cluster: rancher-master 
+#          app-name: neuvector 
+#          chart: core
+#          targetRevision: 2.8.4 
+#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+#          namespace: cattle-neuvector-system
+#
 #        - cluster: rancher-master 
 #          app-name: istio-base 
 #          chart: base
@@ -28,54 +28,60 @@ spec:
 #          targetRevision: 1.25.0
 #          repoURL: 'https://istio-release.storage.googleapis.com/charts'
 #          namespace: istio-system
-
+#
+#        - cluster: rancher-master 
+#          app-name: external-secrets 
+#          chart: external-secrets 
+#          targetRevision: 0.14.4 
+#          repoURL: 'https://charts.external-secrets.io'
+#          namespace: external-secrets
+#
+#        - cluster: rancher-master 
+#          repoURL: 'registry-1.docker.io/bitnamicharts'
+#          targetRevision: 1.4.12 
+#          app-name: cert-manager 
+#          chart: cert-manager
+#          namespace: cert-manager
+#
+#        - cluster: rancher-master 
+#          app-name: rancher-prime 
+#          chart: rancher
+#          targetRevision: 2.10.4 
+#          repoURL: 'https://charts.rancher.com/server-charts/prime'
+#          namespace: cattle-system
+#
+#        - cluster: rancher-master 
+#          app-name: homer-app 
+#          chart: homer
+#          targetRevision: 8.2.3 
+#          repoURL: 'https://djjudas21.github.io/charts/'
+#          namespace: homer-app 
+#
+#
+#        - cluster: rke2-cluster 
+#          app-name: neuvector 
+#          chart: core
+#          targetRevision: 2.8.4 
+#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: rke2-cluster 
+#          app-name: external-secrets 
+#          chart: external-secrets 
+#          targetRevision: 0.14.4 
+#          repoURL: 'https://charts.external-secrets.io'
+#          namespace: external-secrets
         - cluster: rancher-master 
-          app-name: external-secrets 
-          chart: external-secrets 
-          targetRevision: 0.14.4 
-          repoURL: 'https://charts.external-secrets.io'
-          namespace: external-secrets
-
-        - cluster: rancher-master 
-          repoURL: 'registry-1.docker.io/bitnamicharts'
-          targetRevision: 1.4.12 
-          app-name: cert-manager 
-          chart: cert-manager
-          namespace: cert-manager
-
-        - cluster: rancher-master 
-          app-name: rancher-prime 
-          chart: rancher
-          targetRevision: 2.10.4 
-          repoURL: 'https://charts.rancher.com/server-charts/prime'
-          namespace: cattle-system
-
-        - cluster: rancher-master 
-          app-name: homer-app 
-          chart: homer
-          targetRevision: 8.2.3 
-          repoURL: 'https://djjudas21.github.io/charts/'
-          namespace: homer-app 
-
-
-        - cluster: rke2-cluster 
-          app-name: neuvector 
-          chart: core
-          targetRevision: 2.8.4 
-          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-          namespace: cattle-neuvector-system
-
-        - cluster: rke2-cluster 
-          app-name: external-secrets 
-          chart: external-secrets 
-          targetRevision: 0.14.4 
-          repoURL: 'https://charts.external-secrets.io'
-          namespace: external-secrets
+          app-name: vault
+          chart: vault
+          targetRevision: 0.30.0 
+          repoURL: 'https://helm.releases.hashicorp.com'
+          namespace: vault
 
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
-      namespace: argo
+      namespace: argocd
 
     spec:
       project: default

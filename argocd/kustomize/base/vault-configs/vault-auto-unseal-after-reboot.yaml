@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-unsealer
+  namespace: vault
+spec:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: vault-unsealer
+            image: hashicorp/vault:1.19
+            env:
+            - name: VAULT_PREFIX
+              value: "rancher-master"
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Check if keys exist
+              if [ ! -f /vault-keys/unseal-key.txt ]; then
+                echo "No unseal key found, exiting"
+                exit 0
+              fi
+              
+              # Get unseal key
+              UNSEAL_KEY=$(cat /vault-keys/unseal-key.txt)
+              
+              # Check all Vault pods
+              for i in 0 1 2; do
+                echo "Checking ${VAULT_PREFIX}-vault-$i..."
+                STATUS=$(VAULT_ADDR=http://${VAULT_PREFIX}-vault-$i.${VAULT_PREFIX}-vault-internal:8200 vault status -format=json 2>/dev/null || echo '{"sealed": true}')
+                SEALED=$(echo $STATUS | grep -o '"sealed":[^,}]*' | cut -d: -f2 | tr -d ' ')
+                
+                if [ "$SEALED" = "true" ]; then
+                  echo "Unsealing ${VAULT_PREFIX}-vault-$i..."
+                  VAULT_ADDR=http://${VAULT_PREFIX}-vault-$i.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal $UNSEAL_KEY
+                else
+                  echo "${VAULT_PREFIX}-vault-$i is already unsealed"
+                fi
+              done
+            volumeMounts:
+            - name: vault-keys
+              mountPath: /vault-keys
+          volumes:
+          - name: vault-keys
+            persistentVolumeClaim:
+              claimName: vault-keys
+          restartPolicy: OnFailure
