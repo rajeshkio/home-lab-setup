@@ -1,0 +1,134 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-init
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"  # Run this first
+spec:
+  template:
+    spec:
+      containers:
+      - name: vault-init
+        image: hashicorp/vault:1.19
+        env:
+        - name: VAULT_PREFIX
+          value: "rancher-master"
+        command:
+        - /bin/sh
+        - -c
+        - | 
+          # Wait for Vault to start
+          until nslookup ${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal.vault.svc.cluster.local; do 
+            echo "Waiting for Vault to start..."
+            sleep 2
+          done
+          sleep 5
+
+          ROOT_FILE="/vault-keys/root-token.txt"
+          UNSEAL_FILE="/vault-keys/unseal-key.txt"
+          
+          # Check if keys already exist in PV (rerun scenario)
+          if [ -r "$ROOT_FILE" ] && [ -s "$ROOT_FILE" ] && grep -q '[^[:space:]]' "$ROOT_FILE" && [ -r "$UNSEAL_FILE" ] && [ -s "$UNSEAL_FILE" ] && grep -q '[^[:space:]]' "$UNSEAL_FILE"; then            echo "Checking file existence and size:"
+            ls -lh /vault-keys/
+            UNSEAL_KEY=$(cat /vault-keys/unseal-key.txt)
+            cat /vault-keys/root-token.txt || echo "cat failed"
+            echo "Keys already exist, using them for unsealing... $UNSEAL_KEY"
+            
+            # Unseal using existing key
+            VAULT_ADDR=http://${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal "$UNSEAL_KEY"
+            VAULT_ADDR=http://${VAULT_PREFIX}-vault-1.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal "$UNSEAL_KEY"
+            VAULT_ADDR=http://${VAULT_PREFIX}-vault-2.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal "$UNSEAL_KEY"
+            
+            echo "Vault unsealed with existing keys"
+            exit 0
+          fi
+          
+          # Check if initialized
+          INIT_OUTPUT=$(VAULT_ADDR=http://${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal:8200 vault operator init -key-shares=1 -key-threshold=1)
+          INITIALIZED=$(echo $INIT_OUTPUT | grep -o '"initialized":[^,}]*' | cut -d: -f2 | tr -d ' ')
+          
+          if [ "$INITIALIZED" = "false" ]; then
+            # Initialize with single key for simplicity
+            echo "Initializing Vault..."
+            INIT_OUTPUT=$(VAULT_ADDR=http://${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal:8200 vault operator init -key-shares=1 -key-threshold=1)
+            
+            # Extract keys
+            UNSEAL_KEY=$(echo "$INIT_OUTPUT" | grep "Unseal Key 1:" | awk '{print $NF}')
+            ROOT_TOKEN=$(echo "$INIT_OUTPUT" | grep "Initial Root Token:" | awk '{print $NF}')
+            
+            # Save keys to persistent storage
+            echo "$UNSEAL_KEY" > /vault-keys/unseal-key.txt
+            echo "$ROOT_TOKEN" > /vault-keys/root-token.txt
+            
+            # Also save the full output for reference
+            echo "$INIT_OUTPUT" > /vault-keys/init-output.json
+            
+            # Unseal Vault pods
+            echo "Unsealing Vault pods..."
+            for i in 0 1 2; do  # <- CHANGED: Looping through pods instead of separate commands
+              echo "Unsealing ${VAULT_PREFIX}-vault-$i..."
+              VAULT_ADDR=http://${VAULT_PREFIX}-vault-$i.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal "$UNSEAL_KEY"  
+            done
+          else
+            echo "Vault is already initialized or there was an error checking status"
+            
+            # Check if sealed
+            SEALED=$(VAULT_ADDR=http://${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal:8200 vault status | grep 'Sealed' | awk '{print $2}')
+            echo "SEALED: $SEALED"
+            if [ "$SEALED" = "true" ]; then
+              echo "Vault is sealed, attempting to unseal with key from unseal job..."
+              # Get status from all pods
+              for i in 0 1 2; do
+                POD_STATUS=$(VAULT_ADDR=http://${VAULT_PREFIX}-vault-$i.${VAULT_PREFIX}-vault-internal:8200 vault status -format=json 2>/dev/null)
+                POD_SEALED=$(echo $POD_STATUS | grep -o '"sealed":[^,}]*' | cut -d: -f2 | tr -d ' ')
+                
+                if [ "$POD_SEALED" = "true" ]; then
+                  echo "Unsealing ${VAULT_PREFIX}-vault-$i..."
+                  VAULT_ADDR=http://${VAULT_PREFIX}-vault-$i.${VAULT_PREFIX}-vault-internal:8200 vault operator unseal "$UNSEAL_KEY"
+                fi
+              done
+            fi
+          fi
+          # Print final status
+          echo "Final Vault status:"  
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault-0.${VAULT_PREFIX}-vault-internal:8200 vault status || echo "Cannot get status from pod 0"
+        volumeMounts:
+        - name: vault-keys
+          mountPath: /vault-keys
+      volumes:
+      - name: vault-keys
+        persistentVolumeClaim:
+          claimName: vault-keys
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-init
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-init-role
+  namespace: vault
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-init-rolebinding
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vault-init-role
+subjects:
+- kind: ServiceAccount
+  name: vault-init
+  namespace: vault

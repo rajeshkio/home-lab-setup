@@ -1,0 +1,134 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-config
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # Run after init job
+spec:
+  template:
+    spec:
+      containers:
+      - name: vault-config
+        image: hashicorp/vault:1.19
+        env:
+        - name: VAULT_PREFIX
+          value: "rancher-master"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Wait for init job to complete by checking for token file
+          while [ ! -f /vault-keys/root-token.txt ]; do
+            echo "Waiting for initialization to complete..."
+            sleep 5
+          done
+          
+          # Get root token from volume
+          ROOT_TOKEN=$(cat /vault-keys/root-token.txt)
+          
+          # Login with root token
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault login $ROOT_TOKEN
+          
+          # Enable KV secrets engine
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault secrets enable -path=kv -version=2 kv || true
+          
+          # Enable Kubernetes auth
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable kubernetes || true
+          
+          # Configure Kubernetes auth
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/config \
+            kubernetes_host="https://kubernetes.default.svc" \
+            kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            issuer="https://kubernetes.default.svc.cluster.local"
+          
+          # Create policies
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write readonly-policy - <<EOF
+          path "kv/*" {
+            capabilities = ["read", "list"]
+          }
+          path "kv/data/*" {
+            capabilities = ["read", "list"]
+          }
+          path "kv/metadata/*" {
+            capabilities = ["read", "list"]
+          }
+          EOF
+          
+          # Create readwrite policy
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write readwrite-policy - <<EOF
+          path "kv/*" {
+            capabilities = ["create", "read", "update", "list"]
+          }
+          path "kv/data/*" {
+            capabilities = ["create", "read", "update", "list"]
+          }
+          path "kv/metadata/*" {
+            capabilities = ["read", "list"]
+          }
+          EOF
+          
+          # Create roles for each namespace
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/certificate-ns \
+            bound_service_account_names=external-secrets \
+            bound_service_account_namespaces=certificate-ns \
+            policies=readwrite-policy \
+            ttl=1h
+            
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/external-secrets \
+            bound_service_account_names=external-secrets \
+            bound_service_account_namespaces=external-secrets \
+            policies=readonly-policy \
+            ttl=1h
+            
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/cert-manager \
+            bound_service_account_names=external-secrets \
+            bound_service_account_namespaces=cert-manager \
+            policies=readonly-policy \
+            ttl=1h
+            
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/external-dns \
+            bound_service_account_names=external-secrets \
+            bound_service_account_namespaces=external-dns \
+            policies=readonly-policy \
+            ttl=1h
+            
+          echo "Vault configuration complete!"
+        volumeMounts:
+        - name: vault-keys
+          mountPath: /vault-keys
+      volumes:
+      - name: vault-keys
+        persistentVolumeClaim:
+          claimName: vault-keys
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-config
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-config-role
+  namespace: vault
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-config-rolebinding
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vault-config-role
+subjects:
+- kind: ServiceAccount
+  name: vault-config
+  namespace: vault

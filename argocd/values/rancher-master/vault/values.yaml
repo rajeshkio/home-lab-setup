@@ -1,0 +1,12 @@
+server:
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+  dataStorage:
+    enabled: true
+    size: 10Gi
+  affinity: null  # For easier testing environment
+  ui:
+    enabled: true
