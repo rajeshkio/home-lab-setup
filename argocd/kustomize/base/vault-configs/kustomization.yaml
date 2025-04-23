@@ -6,3 +6,4 @@ resources:
 - vault-config.yaml
 - vault-init.yaml 
 - vault-init-pvc.yaml
+- vault-http-route.yaml
