@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: main
-  namespace: argocd
+  namespace: argo
 
 spec:
   generators:
@@ -81,7 +81,7 @@ spec:
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
-      namespace: argocd
+      namespace: argo
 
     spec:
       project: default
