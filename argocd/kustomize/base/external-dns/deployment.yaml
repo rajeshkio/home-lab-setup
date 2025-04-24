@@ -25,11 +25,11 @@ spec:
         - --source=gateway-tlsroute
         - --source=service
         - --domain-filter=rajesh-kumar.in
-        - --provider=cloudfare
+        - --provider=cloudflare
         - --zone-id-filter=96dd69c5ed5e262652233501b82b9593
         - --log-level=debug
         env:
-        - name: CF_API_KEY
+        - name: CF_API_TOKEN 
           valueFrom:
             secretKeyRef:
               name: cloudflare-api-key
