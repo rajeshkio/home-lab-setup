@@ -45,6 +45,7 @@ spec:
               MAX_RETRIES=10
               RETRY_COUNT=0
               SUCCESS=false
+              TLS_SECRET_NAME=rajesh-tls-cert
     
               while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
                 if vault kv put -mount=kv $TLS_SECRET_NAME tls.cert="$TLS_CERT" tls.key="$TLS_KEY"; then

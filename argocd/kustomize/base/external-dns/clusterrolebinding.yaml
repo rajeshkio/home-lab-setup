@@ -8,5 +8,5 @@ roleRef:
   name: external-dns
 subjects:
   - kind: ServiceAccount
-    name: external-dns
+    name: rancher-master-external-secrets
     namespace: external-dns 

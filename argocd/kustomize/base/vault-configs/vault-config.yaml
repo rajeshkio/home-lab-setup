@@ -34,10 +34,10 @@ spec:
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault secrets enable -path=kv -version=2 kv || true
           
           # Enable Kubernetes auth
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable kubernetes || true
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable --path ${VAULT_PREFIX} kubernetes || true
           
           # Configure Kubernetes auth
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/config \
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/config \
             kubernetes_host="https://kubernetes.default.svc" \
             kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
             issuer="https://kubernetes.default.svc.cluster.local"
@@ -69,26 +69,26 @@ spec:
           EOF
           
           # Create roles for each namespace
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/certificate-ns \
-            bound_service_account_names=external-secrets \
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/certificate-ns \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=certificate-ns \
             policies=readwrite-policy \
             ttl=1h
             
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/external-secrets \
-            bound_service_account_names=external-secrets \
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-secrets \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=external-secrets \
             policies=readonly-policy \
             ttl=1h
             
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/cert-manager \
-            bound_service_account_names=external-secrets \
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-manager \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=cert-manager \
             policies=readonly-policy \
             ttl=1h
             
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/kubernetes/role/external-dns \
-            bound_service_account_names=external-secrets \
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-dns \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=external-dns \
             policies=readonly-policy \
             ttl=1h
