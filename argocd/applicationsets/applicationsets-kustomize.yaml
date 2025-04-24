@@ -33,35 +33,35 @@ spec:
 #      #    path: argocd/kustomize/overlays/rancher-master/kiali-httproute/
 #      #    namespace: istio-system
 #
-#        - cluster: rancher-master 
-#          app-name: vault-cert-sync-job
-#          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
-#          namespace: cert-manager
-#
-#        - cluster: rancher-master 
-#          app-name: external-dns
-#          path: argocd/kustomize/overlays/rancher-master/external-dns/
-#          namespace: external-dns
-#
-#        - cluster: rancher-master 
-#          app-name: external-secrets-config 
-#          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
-#          namespace: external-secrets
-#
-#        - cluster: rancher-master 
-#          app-name: rancher-httproute
-#          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
-#          namespace: cattle-system
-#
-#        - cluster: rancher-master 
-#          app-name: cert-manager-config 
-#          path: argocd/kustomize/overlays/rancher-master/cert-manager-config
-#          namespace: cert-manager
-#
-#        - cluster: rancher-master 
-#          app-name: homer-app-httproute
-#          path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
-#          namespace: homer-app
+        - cluster: rancher-master 
+          app-name: vault-cert-sync-job
+          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
+          namespace: cert-manager
+
+        - cluster: rancher-master 
+          app-name: external-dns
+          path: argocd/kustomize/overlays/rancher-master/external-dns/
+          namespace: external-dns
+
+        - cluster: rancher-master 
+          app-name: external-secrets-config 
+          path: argocd/kustomize/overlays/rancher-master/external-secrets-config
+          namespace: external-secrets
+
+        - cluster: rancher-master 
+          app-name: rancher-httproute
+          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
+          namespace: cattle-system
+
+        - cluster: rancher-master 
+          app-name: cert-manager-config 
+          path: argocd/kustomize/overlays/rancher-master/cert-manager-config
+          namespace: cert-manager
+
+        - cluster: rancher-master 
+          app-name: homer-app-httproute
+          path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
+          namespace: homer-app
 #
 #        - cluster: rke2-cluster 
 #          app-name: pixiedocs-app
