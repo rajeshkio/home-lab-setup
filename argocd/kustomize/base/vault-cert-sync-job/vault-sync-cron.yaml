@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: sync-cert-to-vault
+  namespace: certificate-ns
 spec:
   schedule: "0 0 * * *"  # Run every 5 minutes
   successfulJobsHistoryLimit: 3
