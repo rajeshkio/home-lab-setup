@@ -9,14 +9,16 @@ spec:
     #server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: rk90229@gmail.com
     privateKeySecretRef:
-      name: letsencrypt-route53-dns-private
+      name: letsencryp-cloudfare-private
     solvers:
     - selector:
         dnsZones:
         - "*.rajesh-kumar.in"
       dns01:
-        route53:
-          region: ap-south-1
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-api-key 
+            key: apiKey 
 
 ---
 apiVersion: cert-manager.io/v1
