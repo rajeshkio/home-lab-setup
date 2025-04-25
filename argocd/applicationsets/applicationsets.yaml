@@ -20,6 +20,7 @@ spec:
           targetRevision: 1.4.13 
           app-name: cert-manager 
           chart: cert-manager
+          namespace: cert-manager 
 
         - cluster: rancher-master 
           app-name: homer-app 
