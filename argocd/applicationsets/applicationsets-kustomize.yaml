@@ -8,31 +8,6 @@ spec:
   generators:
   - list:
       elements:
-#        - cluster: rancher-master 
-#          app-name: neuvector-httproute
-#          path: argocd/kustomize/overlays/rancher-master/neuvector-httproute
-#          namespace: cattle-system
-#
-#        - cluster: rancher-master 
-#          app-name: neuvector-external-secret
-#          path: argocd/kustomize/overlays/rancher-master/neuvector-external-secret/
-#          namespace: cattle-neuvector-system
-#
-#        - cluster: rancher-master 
-#          app-name: neuvector-configmaps
-#          path: argocd/kustomize/overlays/rancher-master/neuvector-configmaps/
-#          namespace: cattle-neuvector-system
-#
-#       # - cluster: rancher-master 
-#       #   app-name: istio-config
-#       #   path: argocd/kustomize/overlays/rancher-master/istio-config/
-#       #   namespace: istio-system
-#
-#      #  - cluster: rancher-master 
-#      #    app-name: kiali-httproute
-#      #    path: argocd/kustomize/overlays/rancher-master/kiali-httproute/
-#      #    namespace: istio-system
-#
         - cluster: rancher-master 
           app-name: vault-cert-sync-job
           path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
@@ -62,31 +37,32 @@ spec:
           app-name: homer-app-httproute
           path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
           namespace: homer-app
-#
-#        - cluster: rke2-cluster 
-#          app-name: pixiedocs-app
-#          path: argocd/kustomize/overlays/rke2-cluster/pixiedocs-app/
-#          namespace: gotenberg
-#
-#        - cluster: rke2-cluster 
-#          app-name: neuvector-external-secret
-#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-external-secret/
-#          namespace: cattle-neuvector-system
-#
-#        - cluster: rke2-cluster 
-#          app-name: neuvector-httproute
-#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-httproute/
-#          namespace: cattle-neuvector-system
-#
-#        - cluster: rke2-cluster 
-#          app-name: neuvector-configmaps
-#          path: argocd/kustomize/overlays/rke2-cluster/neuvector-configmaps/
-#          namespace: cattle-neuvector-system
 
         - cluster: rancher-master
           app-name: vault-configs
           path: argocd/kustomize/overlays/rancher-master/vault-config/
           namespace: vault  
+
+        - cluster: k3s-cluster 
+          app-name: pixiedocs-app
+          path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
+          namespace: gotenberg
+
+        - cluster: k3s-cluster 
+          app-name: neuvector-external-secret
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
+          namespace: cattle-neuvector-system
+
+        - cluster: k3s-cluster 
+          app-name: neuvector-httproute
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
+          namespace: cattle-neuvector-system
+
+        - cluster: k3s-cluster 
+          app-name: neuvector-configmaps
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
+          namespace: cattle-neuvector-system
+
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
