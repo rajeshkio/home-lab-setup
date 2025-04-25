@@ -63,6 +63,11 @@ spec:
           path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
           namespace: cattle-neuvector-system
 
+        - cluster: k3s-cluster 
+          app-name: external-dns
+          path: argocd/kustomize/overlays/k3s-cluster/external-dns/
+          namespace: external-dns
+
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
