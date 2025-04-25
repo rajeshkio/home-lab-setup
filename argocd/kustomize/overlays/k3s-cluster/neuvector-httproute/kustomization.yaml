@@ -7,12 +7,12 @@ patches:
       - op: add
         path: /spec/hostnames
         value:
-          - "nv-rke2.rajesh-kumar.in"
+          - "nv-k3s.rajesh-kumar.in"
       - op: add
         path: /spec/parentRefs 
         value:
-          - name: rke2-server-gateway
-            namespace: istio-gateway
+          - name: traefik-gateway 
+            namespace: kube-system
     target:
       kind: HTTPRoute
       name: neuvector-httproute
