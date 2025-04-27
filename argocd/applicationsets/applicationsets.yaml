@@ -50,6 +50,13 @@ spec:
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
 
+        - cluster: k3s-cluster 
+          app-name: harbor 
+          chart: harbor 
+          targetRevision: 1.17.0 
+          repoURL: 'https://helm.goharbor.io'
+          namespace: harbor
+
 
   template:
     metadata:
