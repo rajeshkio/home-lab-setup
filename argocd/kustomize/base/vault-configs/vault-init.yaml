@@ -15,8 +15,6 @@ spec:
         env:
         - name: VAULT_PREFIX
           value: "rancher-master"
-        - name: VAULT_REPLICAS
-          value: "1"
         command:
         - /bin/sh
         - -c
