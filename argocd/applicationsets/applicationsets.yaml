@@ -11,7 +11,7 @@ spec:
         - cluster: rancher-master 
           app-name: external-secrets 
           chart: external-secrets 
-          targetRevision: 0.16.1 
+          targetRevision: 0.15.1 
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
 
