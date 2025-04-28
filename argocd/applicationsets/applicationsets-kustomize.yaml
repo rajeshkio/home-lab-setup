@@ -68,6 +68,11 @@ spec:
           path: argocd/kustomize/overlays/k3s-cluster/external-dns/
           namespace: external-dns
 
+        - cluster: k3s-cluster 
+          app-name: traefik-config 
+          path: argocd/kustomize/overlays/k3s-cluster/traefik-config/
+          namespace: kube-system
+
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
