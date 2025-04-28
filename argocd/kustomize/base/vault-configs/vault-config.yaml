@@ -14,14 +14,6 @@ spec:
         env:
         - name: VAULT_PREFIX
           value: "rancher-master"
-        - name: CLUSTER_1
-          value: "k3s-cluster"
-        - name: CLUSTER_1_IP
-          value: "192.168.90.110"
-        - name: CLUSTER_2
-          value: "asus-server"
-        - name: CLUSTER_2_IP
-          value: "192.168.90.50"
         command:
         - /bin/sh
         - -c
@@ -43,7 +35,6 @@ spec:
           
           # Enable Kubernetes auth
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable --path ${VAULT_PREFIX} kubernetes || true
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable --path ${CLUSTER_1} kubernetes || true
           
           # Configure Kubernetes auth
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/config \
