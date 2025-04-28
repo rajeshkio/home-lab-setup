@@ -77,7 +77,7 @@ spec:
             STATUS_JSON=$(VAULT_ADDR=$vault_addr vault status -format=json 2>/dev/null || echo '{"initialized":false}')
             debug "Status JSON: ${STATUS_JSON}"
             
-            INITIALIZED=$(echo "$STATUS_JSON" | grep -o '"initialized": *[a-z]*' | grep -o '[a-z]*$')            
+            INITIALIZED=$(echo "$STATUS_JSON" | grep -o '"initialized": *[a-z]*' | awk '{print $2}')            
             debug "Initialization status: ${INITIALIZED}"
             
             if [ "$INITIALIZED" = "true" ]; then
@@ -234,16 +234,16 @@ spec:
           done
           
           # Check if the pod is initialized
-          init_status=$(is_initialized; echo $?)
           debug "Pod initialization status: $init_status"
           
-          if [ "$init_status" = "0" ]; then
+          if is_initialized; then
             echo "${VAULT_PREFIX}-vault-0 is already initialized."
+            exit 0
             
             # If we don't have the key but the system is initialized, we can't proceed with unsealing
-            if [ -z "$UNSEAL_KEY" ]; then
-              echo "ERROR: Vault is initialized but no unseal key found. Cannot proceed with automatic unsealing."
-              exit 1
+          #  if [ -z "$UNSEAL_KEY" ]; then
+          #    echo "ERROR: Vault is initialized but no unseal key found. Cannot proceed with automatic unsealing."
+          #    exit 1
             fi
           else
             echo "${VAULT_PREFIX}-vault-0 is not initialized."
