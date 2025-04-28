@@ -5,6 +5,11 @@ namespace: external-dns
 resources:
 - ../../../base/external-dns
 
-#patchesStrategicMerge:
-#- deployment-patch.yaml
-
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --txt-owner-id=k3s-cluster
+    target:
+      kind: Deployment
+      name: external-dns
