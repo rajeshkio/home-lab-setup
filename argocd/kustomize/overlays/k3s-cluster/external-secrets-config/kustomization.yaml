@@ -9,7 +9,7 @@ patches:
 - patch: |-
   - op: replace
     path: /spec/provider/vault/auth/kubernetes/mountPath
-    value: "rke2-cluster"
+    value: "k3s-cluster"
   - op: replace
     path: /spec/provider/vault/auth/kubernetes/role
     value: "external-secrets"

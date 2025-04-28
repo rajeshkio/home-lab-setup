@@ -13,3 +13,9 @@ spec:
         websecure:
           namespacePolicy: "All"
           protocol: HTTPS
+          port: 8443
+          certificateRefs:
+            - kind: Secret
+              name: rajesh-tls-cert
+              namespace: certificate-ns
+          mode: Terminate
