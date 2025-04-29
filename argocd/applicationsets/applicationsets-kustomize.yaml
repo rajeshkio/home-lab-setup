@@ -78,6 +78,26 @@ spec:
           path: argocd/kustomize/overlays/k3s-cluster/rajesh-tls-external-secret/
           namespace: certificate-ns
 
+        - cluster: k3s-cluster 
+          app-name: external-secrets-config 
+          path: argocd/kustomize/overlays/k3s-cluster/external-secrets-config/
+          namespace: certificate-ns
+
+        - cluster: asus-cluster 
+          app-name: external-dns
+          path: argocd/kustomize/overlays/asus-cluster/external-dns/
+          namespace: external-dns
+
+        - cluster: asus-cluster 
+          app-name: rajesh-tls-external-secret 
+          path: argocd/kustomize/overlays/asus-cluster/rajesh-tls-external-secret/
+          namespace: certificate-ns
+
+        - cluster: asus-cluster 
+          app-name: external-secrets-config 
+          path: argocd/kustomize/overlays/asus-cluster/external-secrets-config/
+          namespace: certificate-ns
+
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'

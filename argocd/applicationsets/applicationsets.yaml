@@ -57,6 +57,12 @@ spec:
           repoURL: 'https://helm.goharbor.io'
           namespace: harbor
 
+        - cluster: asus-cluster 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.16.1 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
 
   template:
     metadata:

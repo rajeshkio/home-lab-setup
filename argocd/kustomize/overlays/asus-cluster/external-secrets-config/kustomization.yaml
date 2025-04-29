@@ -9,7 +9,7 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/mountPath
-      value: "k3s-cluster"
+      value: "asus-cluster"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/role
       value: "external-secrets"
@@ -22,7 +22,6 @@ patches:
   target:
     kind: ClusterSecretStore
     name: vault-backend-access
-
 - patch: |-
     - op: replace
       path: /metadata/name 
