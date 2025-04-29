@@ -69,11 +69,6 @@ spec:
           namespace: external-dns
 
         - cluster: k3s-cluster 
-          app-name: traefik-config 
-          path: argocd/kustomize/overlays/k3s-cluster/traefik-config/
-          namespace: kube-system
-
-        - cluster: k3s-cluster 
           app-name: rajesh-tls-external-secret 
           path: argocd/kustomize/overlays/k3s-cluster/rajesh-tls-external-secret/
           namespace: certificate-ns

@@ -51,6 +51,13 @@ spec:
           namespace: external-secrets
 
         - cluster: k3s-cluster 
+          app-name: traefik 
+          chart: traefik 
+          targetRevision: 35.1.0 
+          repoURL: 'https://traefik.github.io/charts'
+          namespace: kube-system
+
+        - cluster: k3s-cluster 
           app-name: harbor 
           chart: harbor 
           targetRevision: 1.17.0 
