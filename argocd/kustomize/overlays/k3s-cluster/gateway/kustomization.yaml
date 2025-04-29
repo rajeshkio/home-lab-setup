@@ -15,5 +15,9 @@ patches:
             - name: rajesh-tls-cert
               namespace: certificate-ns
               kind: Secret 
+       - op: add
+         path: /spec/gatewayClassName
+         value: istio 
+         
     target:
       kind: Gateway 

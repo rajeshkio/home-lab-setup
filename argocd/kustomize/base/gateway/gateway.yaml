@@ -3,7 +3,6 @@ kind: Gateway
 metadata:
   name: common-server-gateway
 spec:
-  gatewayClassName: istio
   listeners:
   - protocol: HTTPS
     port: 443
