@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: sync-cert-to-vault
-  namespace: certificate-ns
+  namespace: cert-manager 
 spec:
   schedule: "0 0 * * *"  # Run every 5 minutes
   successfulJobsHistoryLimit: 3
@@ -31,7 +31,7 @@ spec:
               echo "$JWT" > /tmp/jwt.txt
               
               # Login using the correct auth method and path
-              if ! VAULT_TOKEN=$(vault write -field=token auth/rancher-master/login role=certificate-ns jwt=$(cat /tmp/jwt.txt)); then
+              if ! VAULT_TOKEN=$(vault write -field=token auth/rancher-master/login role=cert-manager jwt=$(cat /tmp/jwt.txt)); then
                 echo "Authentication failed"
                 exit 1
               fi

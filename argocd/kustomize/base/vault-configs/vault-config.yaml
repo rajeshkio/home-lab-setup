@@ -69,12 +69,6 @@ spec:
           EOF
           
           # Create roles for each namespace
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/certificate-ns \
-            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
-            bound_service_account_namespaces=certificate-ns \
-            policies=readwrite-policy \
-            ttl=1h
-            
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-secrets \
             bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=external-secrets \
@@ -84,7 +78,7 @@ spec:
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-manager \
             bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=cert-manager \
-            policies=readonly-policy \
+            policies=readwrite-policy \
             ttl=1h
             
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-dns \
