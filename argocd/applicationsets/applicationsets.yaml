@@ -51,11 +51,25 @@ spec:
           namespace: external-secrets
 
         - cluster: k3s-cluster 
-          app-name: traefik 
-          chart: traefik 
-          targetRevision: 35.1.0 
-          repoURL: 'https://traefik.github.io/charts'
-          namespace: kube-system
+          app-name: istio-base
+          chart: base
+          targetRevision: 1.25.2 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
+
+        - cluster: k3s-cluster 
+          app-name: istiod
+          chart: istiod
+          targetRevision: 1.25.2 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
+
+        - cluster: k3s-cluster 
+          app-name: istio-gateway 
+          chart: gateway
+          targetRevision: 1.25.2 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-gateway
 
         - cluster: k3s-cluster 
           app-name: harbor 
