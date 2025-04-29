@@ -9,7 +9,7 @@ spec:
   - "pixiedocs.rajesh-kumar.in"
   parentRefs:
   - name: rke2-server-gateway 
-    namespace: istio-gateway
+    namespace: common-gateway
   rules:
   - matches:
     - path:

@@ -8,7 +8,7 @@ spec:
   - "nv.rajesh-kumar.in"
   parentRefs:
   - name: rancher-server-gateway
-    namespace: cilium-gateway
+    namespace: common-gateway
   rules:
   - matches:
     - path:

@@ -43,6 +43,11 @@ spec:
           path: argocd/kustomize/overlays/rancher-master/vault-config/
           namespace: vault  
 
+        - cluster: rancher-master 
+          app-name: gateway 
+          path: argocd/kustomize/overlays/rancher-master/gateway/
+          namespace: common-gateway
+
         - cluster: k3s-cluster 
           app-name: pixiedocs-app
           path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
@@ -77,6 +82,11 @@ spec:
           app-name: external-secrets-config 
           path: argocd/kustomize/overlays/k3s-cluster/external-secrets-config/
           namespace: certificate-ns
+
+        - cluster: k3s-cluster 
+          app-name: gateway 
+          path: argocd/kustomize/overlays/k3s-cluster/gateway/
+          namespace: common-gateway
 
         - cluster: asus-cluster 
           app-name: external-dns

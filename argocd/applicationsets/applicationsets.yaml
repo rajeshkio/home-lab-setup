@@ -69,7 +69,7 @@ spec:
 #          chart: gateway
 #          targetRevision: 1.25.2 
 #          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-#          namespace: istio-gateway
+#          namespace: common-gateway
 #
         - cluster: k3s-cluster 
           app-name: harbor 

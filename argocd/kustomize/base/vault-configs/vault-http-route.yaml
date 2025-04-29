@@ -10,7 +10,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: rancher-server-gateway
-    namespace: cilium-gateway
+    namespace: common-gateway
   rules:
   - backendRefs:
     - group: ""
