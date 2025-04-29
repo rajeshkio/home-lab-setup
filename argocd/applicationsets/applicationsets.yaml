@@ -64,13 +64,13 @@ spec:
           repoURL: 'https://istio-release.storage.googleapis.com/charts'
           namespace: istio-system
 
-        - cluster: k3s-cluster 
-          app-name: istio-gateway 
-          chart: gateway
-          targetRevision: 1.25.2 
-          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-          namespace: istio-gateway
-
+#        - cluster: k3s-cluster 
+#          app-name: istio-gateway 
+#          chart: gateway
+#          targetRevision: 1.25.2 
+#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+#          namespace: istio-gateway
+#
         - cluster: k3s-cluster 
           app-name: harbor 
           chart: harbor 
