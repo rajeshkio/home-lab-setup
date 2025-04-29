@@ -7,7 +7,7 @@ spec:
   hostnames:
   - "rancher.rajesh-kumar.in"
   parentRefs:
-  - name: rancher-server-gateway 
+  - name: common-server-gateway 
     namespace: common-gateway
   rules:
   - matches:

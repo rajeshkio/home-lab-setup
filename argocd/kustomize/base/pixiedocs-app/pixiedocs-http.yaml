@@ -8,7 +8,7 @@ spec:
   hostnames:
   - "pixiedocs.rajesh-kumar.in"
   parentRefs:
-  - name: rke2-server-gateway 
+  - name: common-server-gateway 
     namespace: common-gateway
   rules:
   - matches:
