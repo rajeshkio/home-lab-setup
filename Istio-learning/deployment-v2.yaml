@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-tester-v2
+  namespace: istio-test
+  labels:
+    app: istio-tester
+    version: v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: istio-tester
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: istio-tester
+        version: v2
+    spec:
+      containers:
+      - name: istio-tester
+        image: rk90229/traffic-visualize:v2
+        env:
+        - name: APP_VERSION
+          value: "v2"
+        - name: APP_COLOR
+          value: "#DB4437"  # Google Red
+        - name: APP_BEHAVIOR
+          value: "normal"
+        - name: API_BASE_URL
+          value: "http://traffic-visualize.istio-test:80"
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 15
