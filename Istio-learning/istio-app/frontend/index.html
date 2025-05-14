@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -131,7 +132,7 @@
             background-color: rgba(0, 0, 0, 0.2);
             margin-top: 20px;
         }
-        
+
         #logs {
             background-color: rgba(0, 0, 0, 0.5);
             color: #4caf50;
@@ -142,30 +143,31 @@
             overflow-y: auto;
             margin-bottom: 20px;
         }
-        
+
         .error-log {
             color: #f44336;
         }
-        
+
         .warning-log {
             color: #ff9800;
         }
-        
+
         .config-box {
             margin-bottom: 20px;
         }
-        
+
         .radio-group {
             display: flex;
             margin: 10px 0;
         }
-        
+
         .radio-group label {
             margin-right: 20px;
             cursor: pointer;
         }
     </style>
 </head>
+
 <body class="blue">
     <header>
         <h1>Istio Demo Application</h1>
@@ -177,19 +179,10 @@
             <h2>API Configuration</h2>
             <div class="radio-group">
                 <label>
-                    <input type="radio" name="api-endpoint" value="api" checked> 
+                    <input type="radio" name="api-endpoint" value="api" checked>
                     Direct API (same domain)
                 </label>
-                <label>
-                    <input type="radio" name="api-endpoint" value="api-v1"> 
-                    API V1 (localhost:5001)
-                </label>
-                <label>
-                    <input type="radio" name="api-endpoint" value="api-v2"> 
-                    API V2 (localhost:5002)
-                </label>
             </div>
-            <button id="btn-apply-config">Apply Configuration</button>
         </div>
 
         <div class="box">
@@ -247,14 +240,10 @@
 
         function getApiBaseUrl() {
             const selection = document.querySelector('input[name="api-endpoint"]:checked').value;
-            
-            switch(selection) {
+
+            switch (selection) {
                 case 'api':
                     return '';  // Same domain, relies on nginx proxy
-                case 'api-v1':
-                    return 'http://localhost:5001';
-                case 'api-v2':
-                    return 'http://localhost:5002';
                 default:
                     return '';
             }
@@ -273,26 +262,25 @@
         const btnCreate = document.getElementById('btn-create');
         const btnLoad = document.getElementById('btn-load');
         const btnLoadHeavy = document.getElementById('btn-load-heavy');
-        const btnApplyConfig = document.getElementById('btn-apply-config');
         const btnClearLogs = document.getElementById('btn-clear-logs');
 
         // Update UI based on state
         function updateUI() {
             // Update theme based on version
             document.body.className = state.apiData.version === 'v1' ? 'blue' : 'green';
-            
+
             // Update version badge
             versionBadge.textContent = state.apiData.version || 'unknown';
-            
+
             // Update API response
             apiResponse.textContent = JSON.stringify(state.apiData, null, 2);
-            
+
             // Update metrics
             totalRequests.textContent = state.metrics.requests;
             totalErrors.textContent = state.metrics.errors;
-            
+
             // Update button states
-            const buttons = [btnFetch, btnCreate, btnLoad, btnLoadHeavy, btnApplyConfig];
+            const buttons = [btnFetch, btnCreate, btnLoad, btnLoadHeavy];
             buttons.forEach(btn => {
                 btn.disabled = state.loading;
             });
@@ -301,30 +289,30 @@
         // Fetch data from API
         async function fetchData() {
             if (state.loading) return;
-            
+
             state.loading = true;
             updateUI();
-            
+
             const endpoint = `${API_BASE}/api/data`;
             logMessage(`Fetching data from: ${endpoint}`);
-            
+
             try {
                 const response = await fetch(endpoint);
                 logMessage(`Response status: ${response.status} ${response.statusText}`);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                
+
                 const contentType = response.headers.get('content-type');
                 logMessage(`Response content type: ${contentType}`);
-                
+
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
                     logMessage(`Non-JSON response received: ${text.slice(0, 100)}...`, 'warning');
                     throw new Error('Response is not JSON');
                 }
-                
+
                 state.apiData = await response.json();
                 logMessage(`Data received: ${JSON.stringify(state.apiData).slice(0, 100)}...`);
                 state.metrics.requests++;
@@ -341,18 +329,18 @@
         // Create record
         async function createRecord() {
             if (state.loading) return;
-            
+
             state.loading = true;
             updateUI();
-            
+
             const endpoint = `${API_BASE}/api/data`;
-            const payload = { 
+            const payload = {
                 timestamp: new Date().toISOString(),
                 action: 'user-click'
             };
-            
+
             logMessage(`Creating record at: ${endpoint} with payload: ${JSON.stringify(payload)}`);
-            
+
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -361,13 +349,13 @@
                     },
                     body: JSON.stringify(payload),
                 });
-                
+
                 logMessage(`Response status: ${response.status} ${response.statusText}`);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                
+
                 state.apiData = await response.json();
                 logMessage(`Record created. Response: ${JSON.stringify(state.apiData).slice(0, 100)}...`);
                 state.metrics.requests++;
@@ -384,53 +372,45 @@
         // Generate load
         async function generateLoad(count = 10) {
             if (state.loading) return;
-            
+
             state.loading = true;
             updateUI();
-            
+
             logMessage(`Generating ${count} requests to ${API_BASE}/api/data`);
-            
+
             for (let i = 0; i < count; i++) {
                 try {
-                    logMessage(`Request ${i+1}/${count}...`);
+                    logMessage(`Request ${i + 1}/${count}...`);
                     const response = await fetch(`${API_BASE}/api/data`);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
-                    
+
                     // Update the latest response
                     if (i === count - 1) {
                         state.apiData = data;
                         logMessage(`Final response received: ${JSON.stringify(data).slice(0, 50)}...`);
                     }
-                    
+
                     // Update metrics
                     state.metrics.requests++;
-                    
+
                     // Small delay to space out requests
                     await new Promise(r => setTimeout(r, 100));
                 } catch (error) {
-                    logMessage(`Error in request ${i+1}: ${error.message}`, 'error');
+                    logMessage(`Error in request ${i + 1}: ${error.message}`, 'error');
                     state.metrics.errors++;
                 }
             }
-            
+
             logMessage(`Load test complete: ${count} requests sent`);
             state.loading = false;
             updateUI();
         }
 
-        // Apply configuration changes
-        function applyConfig() {
-            API_BASE = getApiBaseUrl();
-            logMessage(`API endpoint changed to: ${API_BASE}`);
-            
-            // Test connection immediately
-            fetchData();
-        }
 
         // Clear logs
         function clearLogs() {
@@ -443,7 +423,6 @@
         btnCreate.addEventListener('click', createRecord);
         btnLoad.addEventListener('click', () => generateLoad(10));
         btnLoadHeavy.addEventListener('click', () => generateLoad(50));
-        btnApplyConfig.addEventListener('click', applyConfig);
         btnClearLogs.addEventListener('click', clearLogs);
 
         // Detect browser network errors (CORS, etc)
@@ -453,7 +432,7 @@
 
         // Log startup
         logMessage('Application initialized');
-        
+
         // Initial data fetch with some delay to allow everything to initialize
         setTimeout(() => {
             logMessage('Performing initial data fetch...');
@@ -461,4 +440,5 @@
         }, 500);
     </script>
 </body>
+
 </html>
