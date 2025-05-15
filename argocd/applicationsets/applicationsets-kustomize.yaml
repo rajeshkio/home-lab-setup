@@ -88,6 +88,16 @@ spec:
           path: argocd/kustomize/overlays/k3s-cluster/gateway/
           namespace: common-gateway
 
+        - cluster: k3s-cluster 
+          app-name: kiali-httproute 
+          path: argocd/kustomize/overlays/k3s-cluster/kiali-httproute
+          namespace: istio-system
+
+        - cluster: k3s-cluster 
+          app-name: istio-config 
+          path: argocd/kustomize/overlays/k3s-cluster/istio-config
+          namespace: istio-system
+
         - cluster: asus-cluster 
           app-name: external-dns
           path: argocd/kustomize/overlays/asus-cluster/external-dns/

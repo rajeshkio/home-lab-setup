@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Istio Demo App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.5s ease;
+        }
+
+        /* Theme colors based on version */
+        body.blue {
+            background-color: #282c74;
+            color: white;
+        }
+
+        body.green {
+            background-color: #287446;
+            color: white;
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .blue .version-badge {
+            background-color: #4754e0;
+        }
+
+        .green .version-badge {
+            background-color: #3cb371;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .box {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        pre {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: all 0.2s ease;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .blue button {
+            background-color: #5c67e0;
+            color: white;
+        }
+
+        .green button {
+            background-color: #3cb371;
+            color: white;
+        }
+
+        .blue button:hover:not(:disabled) {
+            background-color: #4754e0;
+        }
+
+        .green button:hover:not(:disabled) {
+            background-color: #329d61;
+        }
+
+        .btn-fetch {
+            background-color: #2196f3 !important;
+        }
+
+        .btn-create {
+            background-color: #9c27b0 !important;
+        }
+
+        .btn-load {
+            background-color: #ff9800 !important;
+        }
+
+        .btn-load-heavy {
+            background-color: #f44336 !important;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
+        #logs {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #4caf50;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 4px;
+            height: 150px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .error-log {
+            color: #f44336;
+        }
+
+        .warning-log {
+            color: #ff9800;
+        }
+
+        .config-box {
+            margin-bottom: 20px;
+        }
+
+        .radio-group {
+            display: flex;
+            margin: 10px 0;
+        }
+
+        .radio-group label {
+            margin-right: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="blue">
+    <header>
+        <h1>Istio Demo Application</h1>
+        <div class="version-badge" id="version-badge">v1</div>
+    </header>
+
+    <div class="container">
+        <div class="box config-box">
+            <h2>API Configuration</h2>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="api-endpoint" value="api" checked>
+                    Direct API (same domain)
+                </label>
+            </div>
+        </div>
+
+        <div class="box">
+            <h2>Debug Console</h2>
+            <div id="logs"></div>
+            <button id="btn-clear-logs">Clear Logs</button>
+        </div>
+
+        <div class="box">
+            <h2>API Service Response</h2>
+            <pre id="api-response">Loading...</pre>
+        </div>
+
+        <div class="box">
+            <h2>Metrics</h2>
+            <p>Total Requests: <span id="total-requests">0</span></p>
+            <p>Errors: <span id="total-errors">0</span></p>
+        </div>
+
+        <div class="box controls">
+            <h2>Controls</h2>
+            <button id="btn-fetch" class="btn-fetch">Fetch Data</button>
+            <button id="btn-create" class="btn-create">Create Record</button>
+            <button id="btn-load" class="btn-load">Generate Light Load (10 requests)</button>
+            <button id="btn-load-heavy" class="btn-load-heavy">Generate Heavy Load (50 requests)</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Istio Demo App - Created for learning service mesh concepts</p>
+    </footer>
+
+    <script>
+        // Simple state management
+        const state = {
+            apiData: { message: 'Loading...', version: 'unknown' },
+            metrics: { requests: 0, errors: 0 },
+            loading: false
+        };
+
+        // Logging system
+        const logs = document.getElementById('logs');
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type === 'error' ? 'error-log' : (type === 'warning' ? 'warning-log' : '');
+            logEntry.textContent = `${timestamp} - ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+            console[type === 'info' ? 'log' : type](message);
+        }
+
+        // API Service URL Configuration
+        let API_BASE = '';  // Will be set based on radio buttons
+
+        function getApiBaseUrl() {
+            const selection = document.querySelector('input[name="api-endpoint"]:checked').value;
+
+            switch (selection) {
+                case 'api':
+                    return '';  // Same domain, relies on nginx proxy
+                default:
+                    return '';
+            }
+        }
+
+        // Set initial API base URL
+        API_BASE = getApiBaseUrl();
+        logMessage(`Initial API endpoint: ${API_BASE}`);
+
+        // DOM Elements
+        const versionBadge = document.getElementById('version-badge');
+        const apiResponse = document.getElementById('api-response');
+        const totalRequests = document.getElementById('total-requests');
+        const totalErrors = document.getElementById('total-errors');
+        const btnFetch = document.getElementById('btn-fetch');
+        const btnCreate = document.getElementById('btn-create');
+        const btnLoad = document.getElementById('btn-load');
+        const btnLoadHeavy = document.getElementById('btn-load-heavy');
+        const btnClearLogs = document.getElementById('btn-clear-logs');
+
+        // Update UI based on state
+        function updateUI() {
+            // Update theme based on version
+            document.body.className = state.apiData.version === 'v1' ? 'blue' : 'green';
+
+            // Update version badge
+            versionBadge.textContent = state.apiData.version || 'unknown';
+
+            // Update API response
+            apiResponse.textContent = JSON.stringify(state.apiData, null, 2);
+
+            // Update metrics
+            totalRequests.textContent = state.metrics.requests;
+            totalErrors.textContent = state.metrics.errors;
+
+            // Update button states
+            const buttons = [btnFetch, btnCreate, btnLoad, btnLoadHeavy];
+            buttons.forEach(btn => {
+                btn.disabled = state.loading;
+            });
+        }
+
+        // Fetch data from API
+        async function fetchData() {
+            if (state.loading) return;
+
+            state.loading = true;
+            updateUI();
+
+            const endpoint = `${API_BASE}/api/data`;
+            logMessage(`Fetching data from: ${endpoint}`);
+
+            try {
+                const response = await fetch(endpoint);
+                logMessage(`Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                logMessage(`Response content type: ${contentType}`);
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    logMessage(`Non-JSON response received: ${text.slice(0, 100)}...`, 'warning');
+                    throw new Error('Response is not JSON');
+                }
+
+                state.apiData = await response.json();
+                logMessage(`Data received: ${JSON.stringify(state.apiData).slice(0, 100)}...`);
+                state.metrics.requests++;
+            } catch (error) {
+                logMessage(`Error fetching data: ${error.message}`, 'error');
+                console.error('Full error:', error);
+                state.metrics.errors++;
+            } finally {
+                state.loading = false;
+                updateUI();
+            }
+        }
+
+        // Create record
+        async function createRecord() {
+            if (state.loading) return;
+
+            state.loading = true;
+            updateUI();
+
+            const endpoint = `${API_BASE}/api/data`;
+            const payload = {
+                timestamp: new Date().toISOString(),
+                action: 'user-click'
+            };
+
+            logMessage(`Creating record at: ${endpoint} with payload: ${JSON.stringify(payload)}`);
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                logMessage(`Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                state.apiData = await response.json();
+                logMessage(`Record created. Response: ${JSON.stringify(state.apiData).slice(0, 100)}...`);
+                state.metrics.requests++;
+            } catch (error) {
+                logMessage(`Error creating record: ${error.message}`, 'error');
+                console.error('Full error:', error);
+                state.metrics.errors++;
+            } finally {
+                state.loading = false;
+                updateUI();
+            }
+        }
+
+        // Generate load
+        async function generateLoad(count = 10) {
+            if (state.loading) return;
+
+            state.loading = true;
+            updateUI();
+
+            logMessage(`Generating ${count} requests to ${API_BASE}/api/data`);
+
+            for (let i = 0; i < count; i++) {
+                try {
+                    logMessage(`Request ${i + 1}/${count}...`);
+                    const response = await fetch(`${API_BASE}/api/data`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Update the latest response
+                    if (i === count - 1) {
+                        state.apiData = data;
+                        logMessage(`Final response received: ${JSON.stringify(data).slice(0, 50)}...`);
+                    }
+
+                    // Update metrics
+                    state.metrics.requests++;
+
+                    // Small delay to space out requests
+                    await new Promise(r => setTimeout(r, 100));
+                } catch (error) {
+                    logMessage(`Error in request ${i + 1}: ${error.message}`, 'error');
+                    state.metrics.errors++;
+                }
+            }
+
+            logMessage(`Load test complete: ${count} requests sent`);
+            state.loading = false;
+            updateUI();
+        }
+
+
+        // Clear logs
+        function clearLogs() {
+            logs.innerHTML = '';
+            logMessage('Logs cleared');
+        }
+
+        // Event listeners
+        btnFetch.addEventListener('click', fetchData);
+        btnCreate.addEventListener('click', createRecord);
+        btnLoad.addEventListener('click', () => generateLoad(10));
+        btnLoadHeavy.addEventListener('click', () => generateLoad(50));
+        btnClearLogs.addEventListener('click', clearLogs);
+
+        // Detect browser network errors (CORS, etc)
+        window.addEventListener('error', (event) => {
+            logMessage(`Global error: ${event.message}`, 'error');
+        });
+
+        // Log startup
+        logMessage('Application initialized');
+
+        // Initial data fetch with some delay to allow everything to initialize
+        setTimeout(() => {
+            logMessage('Performing initial data fetch...');
+            fetchData();
+        }, 500);
+    </script>
+</body>
+
+</html>

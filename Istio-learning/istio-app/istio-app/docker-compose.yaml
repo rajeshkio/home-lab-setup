@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+        #  backend:
+        #    image: rk90229/demo-app-api:v1
+        #    container_name: api-service
+        #    ports:
+        #      - "5000:5000"
+        #    environment:
+        #      - MONGODB_URI=mongodb://mongo:27017
+        #      - PORT=5000
+        #      - VERSION=v1
+        #    depends_on:
+        #      - mongo
+
+  backend:
+    image: rk90229/demo-app-api:v1
+    container_name: api-service-v2
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+      - PORT=5000
+      - VERSION=v2
+    depends_on:
+      - mongo
+
+  frontend:
+    image: rk90229/demo-app:v1
+    container_name: frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
