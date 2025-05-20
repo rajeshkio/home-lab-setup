@@ -39,7 +39,7 @@ spec:
         - cluster: k3s-cluster 
           app-name: neuvector 
           chart: core
-          targetRevision: 2.8.5 
+          targetRevision: 2.8.3 
           repoURL: 'https://neuvector.github.io/neuvector-helm/'
           namespace: cattle-neuvector-system
 
