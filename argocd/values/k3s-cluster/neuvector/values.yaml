@@ -1,7 +1,4 @@
 rbac: true
-global:
-  cattle:
-    url: https://rancher.rajesh-kumar.in/k8s/clusters/c-m-xwfdj8k2
 controller:
   apisvc:
     type: ClusterIP 
@@ -10,7 +7,7 @@ controller:
     managedsvc:
       type: ClusterIP
   ranchersso:
-    enabled: true
+    enabled: false
   env:
     - name: CTRL_EN_ICMP_POLICY
       value: "1"
@@ -29,12 +26,3 @@ cve:
     enabled: true
 crdwebhook:
   enabled: false
-enforcer:
-  env:
-    - name: ENF_NO_SECRET_SCANS
-      value: "1"
-    - name: ENF_NETPOLICY_PULL_INTERVAL
-      value: "60"
-    - name: ENF_NO_AUTO_BENCHMARK
-      value: "1"
-
