@@ -12,14 +12,14 @@ spec:
   storageClassName: local-path
   local:
     path: /var/lib/rancher/k3s/storage/vault-keys
-#  nodeAffinity:
-#    required:
-#      nodeSelectorTerms:
-#      - matchExpressions:
-#        - key: kubernetes.io/hostname
-#          operator: In
-#          values:
-#          - rajesh-rockylinux 
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - proxmox-1 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

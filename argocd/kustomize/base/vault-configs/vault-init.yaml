@@ -237,16 +237,12 @@ spec:
           if is_initialized; then
             echo "${VAULT_PREFIX}-vault-0 is already initialized."
             exit 0
-            
-            # If we don't have the key but the system is initialized, we can't proceed with unsealing
-          #  if [ -z "$UNSEAL_KEY" ]; then
-          #    echo "ERROR: Vault is initialized but no unseal key found. Cannot proceed with automatic unsealing."
-          #    exit 1
-            fi
+          # If we don't have the key but the system is initialized, we can't proceed with unsealing
+          #if [ -z "$UNSEAL_KEY" ]; then
+          #  echo "ERROR: Vault is initialized but no unseal key found. Cannot proceed with automatic unsealing."
+          #  exit 1
           else
             echo "${VAULT_PREFIX}-vault-0 is not initialized."
-            
-            # Initialize Vault
             initialize_vault
             UNSEAL_KEY=$(cat "$UNSEAL_FILE")
           fi
