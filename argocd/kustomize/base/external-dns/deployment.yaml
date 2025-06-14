@@ -28,6 +28,7 @@ spec:
         - --provider=cloudflare
         - --zone-id-filter=96dd69c5ed5e262652233501b82b9593
         - --log-level=debug
+        - --ns1-min-ttl=60
         env:
         - name: CF_API_TOKEN 
           valueFrom:
