@@ -3,7 +3,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: manifest-apps
-  namespace: argo
+  namespace: argocd
 spec:
   generators:
   - list:
@@ -113,15 +113,10 @@ spec:
           path: argocd/kustomize/overlays/asus-cluster/external-secrets-config/
           namespace: certificate-ns
 
-        - cluster: asus-cluster 
-          app-name: argocd-server-tls 
-          path: argocd/kustomize/overlays/asus-cluster/argocd-server-tls/
-          namespace: argo
-
   template:
     metadata:
       name: '{{cluster}}-{{app-name}}'
-      namespace: argo
+      namespace: argocd
     spec:
       project: default
       sources:
