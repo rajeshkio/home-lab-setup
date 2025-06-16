@@ -8,16 +8,16 @@ spec:
   generators:
   - list:
       elements:
-#        - cluster: rancher-master 
-#          app-name: vault-cert-sync-job
-#          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
-#          namespace: cert-manager
-#
-#        - cluster: rancher-master
-#          app-name: vault-configs
-#          path: argocd/kustomize/overlays/rancher-master/vault-config/
-#          namespace: vault  
-#
+        - cluster: rancher-master 
+          app-name: vault-cert-sync-job
+          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
+          namespace: cert-manager
+
+        - cluster: rancher-master
+          app-name: vault-configs
+          path: argocd/kustomize/overlays/rancher-master/vault-config/
+          namespace: vault  
+
         - cluster: rancher-master 
           app-name: external-dns
           path: argocd/kustomize/overlays/rancher-master/external-dns/
