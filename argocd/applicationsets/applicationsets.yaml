@@ -29,13 +29,13 @@ spec:
           repoURL: 'https://djjudas21.github.io/charts/'
           namespace: homer-app 
 
-        - cluster: rancher-master 
-          app-name: vault
-          chart: vault
-          targetRevision: 0.30.0 
-          repoURL: 'https://helm.releases.hashicorp.com'
-          namespace: vault
-
+#        - cluster: rancher-master 
+#          app-name: vault
+#          chart: vault
+#          targetRevision: 0.30.0 
+#          repoURL: 'https://helm.releases.hashicorp.com'
+#          namespace: vault
+#
         - cluster: k3s-cluster 
           app-name: neuvector 
           chart: core
