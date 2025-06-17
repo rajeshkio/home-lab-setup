@@ -99,6 +99,11 @@ spec:
           namespace: istio-system
 
         - cluster: asus-cluster 
+          app-name: gateway 
+          path: argocd/kustomize/overlays/asus-cluster/gateway/
+          namespace: common-gateway
+
+        - cluster: asus-cluster 
           app-name: external-dns
           path: argocd/kustomize/overlays/asus-cluster/external-dns/
           namespace: external-dns
