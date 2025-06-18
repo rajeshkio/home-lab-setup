@@ -71,12 +71,12 @@ spec:
 #          repoURL: 'https://istio-release.storage.googleapis.com/charts'
 #          namespace: common-gateway
 #
-        - cluster: k3s-cluster 
-          app-name: harbor 
-          chart: harbor 
-          targetRevision: 1.17.0 
-          repoURL: 'https://helm.goharbor.io'
-          namespace: harbor
+#        - cluster: k3s-cluster 
+#          app-name: harbor 
+#          chart: harbor 
+#          targetRevision: 1.17.0 
+#          repoURL: 'https://helm.goharbor.io'
+#          namespace: harbor
 
         - cluster: asus-cluster 
           app-name: external-secrets 
