@@ -1,0 +1,9 @@
+config:
+  proxmox-node: "pve"
+  network-bridge: "vmbr0"
+  ubuntu-template: "ubuntu-22.04-template"
+  sle-template: "sle-micro-template"
+  haproxy-ip: "192.168.1.10"
+  k3s-server1-ip: "192.168.1.11"
+  k3s-server2-ip: "192.168.1.12"
+  k3s-server3-ip: "192.168.1.13"
