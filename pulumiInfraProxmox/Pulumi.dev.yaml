@@ -1,9 +1,21 @@
 config:
-  proxmox-node: "pve"
-  network-bridge: "vmbr0"
-  ubuntu-template: "ubuntu-22.04-template"
-  sle-template: "sle-micro-template"
-  haproxy-ip: "192.168.1.10"
-  k3s-server1-ip: "192.168.1.11"
-  k3s-server2-ip: "192.168.1.12"
-  k3s-server3-ip: "192.168.1.13"
+  proxmox-k3s-cluster:password:
+    secure: AAABAGl9s0KsvoAS4g84MUxnyJqWmQLGAeHMbnldANzDkde0yRVTfg==
+  proxmox-k3s-cluster:proxmox-node: proxmox-2
+  proxmox-k3s-cluster:sle-template:
+    count: 3
+    cpu: 10
+    disk-size: 100
+    id: 9001
+    ip: 192.168.90.187
+    memory: 10000
+    name: sle-micro-template
+    vmName: k3s-server-
+  proxmox-k3s-cluster:ubuntu-template:
+    cpu: 2
+    disk-size: 20
+    id: 9000
+    ip: 192.168.90.190
+    memory: 2000
+    name: ubuntu-22.04-template
+    vmName: loadbalancer
