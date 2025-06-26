@@ -37,7 +37,28 @@ type SLETemplate struct {
 	IP       string `yaml:"ip"`
 }
 
-func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress, gateway string, vmTemplateId, memory, cpu int64) (*vm.VirtualMachine, error) {
+func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress, gateway string, vmTemplateId, memory, cpu int64, useSSHKey bool) (*vm.VirtualMachine, error) {
+	var userAccount *vm.VirtualMachineInitializationUserAccountArgs
+	if useSSHKey {
+		// For Ubuntu VM: Use SSH key from environment variable
+		sshPublicKey := os.Getenv("SSH_PUBLIC_KEY")
+		if sshPublicKey == "" {
+			return nil, fmt.Errorf("SSH_PUBLIC_KEY environment variable is required for Ubuntu VM")
+		}
+		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
+			Username: pulumi.String("rajeshk"),
+			Keys: pulumi.StringArray{
+				pulumi.String(sshPublicKey),
+			},
+		}
+	} else {
+		// For SLE VMs: Use password authentication
+		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
+			Username: pulumi.String("rajeshk"),
+			Password: pulumi.String(vmPassword),
+		}
+	}
+
 	vmInstance, err := vm.NewVirtualMachine(ctx, name, &vm.VirtualMachineArgs{
 		Name:     pulumi.String(vmName),
 		NodeName: pulumi.String(nodeName),
@@ -69,10 +90,7 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 		},
 		Initialization: &vm.VirtualMachineInitializationArgs{
 			DatastoreId: pulumi.String("nfs-iso"),
-			UserAccount: &vm.VirtualMachineInitializationUserAccountArgs{
-				Username: pulumi.String("rajeshk"),
-				Password: pulumi.String(vmPassword),
-			},
+			UserAccount: userAccount,
 			Dns: &vm.VirtualMachineInitializationDnsArgs{
 				Domain: pulumi.String("local"),
 				Servers: pulumi.StringArray{
@@ -89,10 +107,6 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 				},
 			},
 		},
-		//	BootOrders: pulumi.StringArray{
-		//		pulumi.String("scsi0"),
-		//		pulumi.String("net0"),
-		//	},
 		Started: pulumi.Bool(true),
 	}, pulumi.Provider(provider))
 	if err != nil {
@@ -114,27 +128,153 @@ func incrementIP(ip string, increment int) string {
 	return fmt.Sprintf("%s.%s.%s.%d", parts[0], parts[1], parts[2], newLastOctet)
 }
 
-func installK3SServer(ctx *pulumi.Context, hostIP, vmPassword string, vmDependency pulumi.Resource) (*remote.Command, error) {
-	return remote.NewCommand(ctx, "server-prep", &remote.CommandArgs{
+func installHaProxy(ctx *pulumi.Context, lbIP string, vmDependency pulumi.Resource, k3sServerIPs []string) (*remote.Command, error) {
+
+	var backendServers strings.Builder
+	for i, serverIP := range k3sServerIPs {
+		backendServers.WriteString(fmt.Sprintf("    server k3s-server-%d %s:6443 check\n", i+1, serverIP))
+	}
+
+	haProxyConfig := fmt.Sprintf(`
+global
+    daemon
+    maxconn 4096
+    log stdout local0
+
+defaults
+    mode tcp
+    timeout connect 5000ms
+    timeout client 50000ms
+    timeout server 50000ms
+    option tcplog
+    log global
+
+# K3s API Server Load Balancer
+frontend k3s-api
+    bind *:6443
+    mode tcp
+    default_backend k3s-servers
+
+backend k3s-servers
+    mode tcp
+    balance roundrobin
+%s
+	`, backendServers.String())
+
+	installCmd := fmt.Sprintf(`
+		# Update package list
+		sudo apt update
+		
+		# Install HAProxy
+		sudo apt install -y haproxy
+		
+		# Backup original config
+		sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.backup
+		
+		# Create new HAProxy configuration
+		sudo tee /etc/haproxy/haproxy.cfg << 'EOF'
+%s
+EOF
+		
+		# Enable and start HAProxy
+		sudo systemctl enable haproxy
+		sudo systemctl restart haproxy
+		
+		# Check HAProxy status
+		sudo systemctl status haproxy --no-pager
+		
+		# Show listening ports
+		sudo netstat -tulpn | grep haproxy
+		
+		echo "HAProxy installed and configured successfully"
+		echo "K3s API accessible via: https://%s:6443"
+	`, haProxyConfig, lbIP)
+
+	resourceName := fmt.Sprintf("haproxy-install-%s", strings.ReplaceAll(lbIP, ".", "-"))
+
+	cmd, err := remote.NewCommand(ctx, resourceName, &remote.CommandArgs{
 		Connection: &remote.ConnectionArgs{
-			Host:     pulumi.String(hostIP),
+			Host:       pulumi.String(lbIP),
+			User:       pulumi.String("rajeshk"),
+			PrivateKey: pulumi.String(os.Getenv("PROXMOX_VE_SSH_PRIVATE_KEY")),
+		},
+		Create: pulumi.String(installCmd),
+	}, pulumi.DependsOn([]pulumi.Resource{vmDependency}))
+	return cmd, err
+}
+
+func installK3SServer(ctx *pulumi.Context, lbIP, vmPassword, serverIP string, vmDependency pulumi.Resource, isFirstServer bool, k3sToken pulumi.StringOutput, haproxyDependency pulumi.Resource) (*remote.Command, error) {
+	var k3sCommand pulumi.StringInput
+
+	if isFirstServer {
+		k3sCommand = pulumi.Sprintf(`
+			sudo tee /etc/resolv.conf << 'EOF'
+nameserver 192.168.90.1
+EOF
+			curl -sfL https://get.k3s.io | sudo sh -s - server \
+				--cluster-init --tls-san=%s --tls-san=$(hostname -I | awk '{print $1}') \
+				--write-kubeconfig-mode 644
+			sudo systemctl enable --now k3s
+			sleep 100
+			sudo k3s kubectl wait --for=condition=Ready nodes --all --timeout=300s
+			sudo ls /var/lib/rancher/k3s/server/node-token
+				`, lbIP)
+	} else {
+		k3sCommand = pulumi.Sprintf(`
+			sudo tee /etc/resolv.conf << 'EOF'
+nameserver 192.168.90.1
+EOF
+			# Wait for first server to be ready
+			until curl -k -s https://%s:6443/ping; do
+				echo "Waiting for first K3s server to be ready..."
+				sleep 10
+			done
+			
+			curl -sfL https://get.k3s.io | sudo sh -s - server \
+			--server https://%s:6443 \
+			--token %s \
+			--tls-san=%s --tls-san=$(hostname -I | awk '{print $1}') \
+			--write-kubeconfig-mode 644
+			sudo systemctl enable --now k3s
+			echo "K3s server joined cluster successfully"
+		`, lbIP, lbIP, k3sToken, lbIP)
+	}
+	resourceName := fmt.Sprintf("k3s-server-%s", strings.ReplaceAll(serverIP, ".", "-"))
+	cmd, err := remote.NewCommand(ctx, resourceName, &remote.CommandArgs{
+		Connection: &remote.ConnectionArgs{
+			Host:     pulumi.String(serverIP),
 			User:     pulumi.String("rajeshk"),
 			Password: pulumi.String(vmPassword),
 		},
-		Create: pulumi.Sprintf(`
-				sudo tee /etc/resolv.conf << 'EOF'
-nameserver 192.168.90.1
-EOF
-				curl -sfL https://get.k3s.io | sh -s - server \
-				--cluster-init --tls-san=%s --tls-san=$(hostname -I | awk '{print $1}') \
-				--write-kubeconfig-mode 644 \
-				--node-external-ip=%s
-				sudo systemctl restart k3s
-				sudo k3s kubectl wait --for=condition=Ready nodes --all --timeout=300s
-				sudo cat /var/lib/rancher/k3s/server/node-token
-				`, hostIP, hostIP),
+		Create: k3sCommand,
 	}, pulumi.DependsOn([]pulumi.Resource{vmDependency}))
+	return cmd, err
 }
+
+func getK3sToken(ctx *pulumi.Context, firstServerIP, vmPassword string, vmDependency pulumi.Resource) (*remote.Command, error) {
+	resourceName := fmt.Sprintf("k3s-token-%s", strings.ReplaceAll(firstServerIP, ".", "-"))
+	cmd, err := remote.NewCommand(ctx, resourceName, &remote.CommandArgs{
+		Connection: &remote.ConnectionArgs{
+			Host:     pulumi.String(firstServerIP),
+			User:     pulumi.String("rajeshk"),
+			Password: pulumi.String(vmPassword),
+		},
+		Create: pulumi.String(`
+			# Wait for K3s to be fully ready and token file to exist
+			#while [ ! -f /var/lib/rancher/k3s/server/node-token ]; do
+			#	echo "Waiting for K3s token file..."
+			#	sleep 5
+			#done
+
+			# Wait a bit more to ensure K3s is fully initialized
+			#sleep 10
+
+			sudo cat /var/lib/rancher/k3s/server/node-token
+			`),
+	}, pulumi.DependsOn([]pulumi.Resource{vmDependency}))
+	return cmd, err
+}
+
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 
@@ -171,42 +311,73 @@ func main() {
 		var sleTemplate SLETemplate
 		cfg.RequireObject("sle-template", &sleTemplate)
 
-		ubuntuVM, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", gateway, ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU)
+		ubuntuVM, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", gateway, ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU, true)
 		if err != nil {
 			return fmt.Errorf("cannot create %v VM: %w", ubuntuVM.Name, err)
 		}
 
+		var k3sServerIPs []string
+		for i := range sleTemplate.Count {
+			serverIP := incrementIP(sleTemplate.IP, int(i))
+			k3sServerIPs = append(k3sServerIPs, serverIP)
+		}
+
+		haproxyCmd, err := installHaProxy(ctx, ubuntuTemplate.IP, ubuntuVM, k3sServerIPs)
+		if err != nil {
+			return fmt.Errorf("cannot install HAProxy: %w", err)
+		}
+
 		var sleVMs []*vm.VirtualMachine
-		var sleServerIPs []string
+		//var sleServerIPs []string
+		var k3sCommands []*remote.Command
+		var k3sServerToken pulumi.StringOutput
 
 		for i := range sleTemplate.Count {
 			serverNum := i + 1
 			resourceName := fmt.Sprintf("sle-server-%d", serverNum)
 			vmName := fmt.Sprintf("%s%d", sleTemplate.VMName, serverNum)
-			serverIP := incrementIP(sleTemplate.IP, int(i))
-			sleServerIPs = append(sleServerIPs, serverIP)
+			serverIP := k3sServerIPs[i]
 			ctx.Log.Info(fmt.Sprintf("Creating SLE K3s server %d with IP %s", serverNum, serverIP), nil)
 
-			sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU)
+			sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU, false)
 			if err != nil {
 				return fmt.Errorf("cannot create SLE VM %s: %w", vmName, err)
 			}
 			sleVMs = append(sleVMs, sleVM)
-		}
-		if len(sleVMs) > 0 {
-			_, err := installK3SServer(ctx, sleServerIPs[0], vmPassword, sleVMs[0])
-			if err != nil {
-				return fmt.Errorf("cannot install K3s server: %w", err)
+
+			if i == 0 {
+				firstServerIP := serverIP
+				k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, firstServerIP, sleVM, true, pulumi.String("").ToStringOutput(), haproxyCmd)
+				if err != nil {
+					return fmt.Errorf("cannot install K3s server on first node %s: %w", firstServerIP, err)
+				}
+				k3sCommands = append(k3sCommands, k3sCmd)
+				tokenCmd, err := getK3sToken(ctx, firstServerIP, vmPassword, k3sCmd)
+				if err != nil {
+					return fmt.Errorf("cannot get K3s token from first server: %w", err)
+				}
+				k3sServerToken = tokenCmd.Stdout
+			} else {
+				k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, serverIP, sleVM, false, k3sServerToken, haproxyCmd)
+				if err != nil {
+					return fmt.Errorf("cannot install K3s on server %s: %w", serverIP, err)
+				}
+				k3sCommands = append(k3sCommands, k3sCmd)
 			}
 		}
 
 		ctx.Export("ubuntuVmId", ubuntuVM.ID())
+		ctx.Export("ubuntuVMName", ubuntuVM.Name)
 		ctx.Export("number of k3s nodes", pulumi.Int(sleTemplate.Count))
 
 		for i, sleVM := range sleVMs {
 			ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), sleVM.VmId)
 			ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVM.Name)
-			ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(sleServerIPs[i]))
+			ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(k3sServerIPs[i]))
+		}
+
+		for i, k3sCmd := range k3sCommands {
+			ctx.Export(fmt.Sprintf("k3sServer%dInstallStatus", i+1), k3sCmd.Stdout)
 		}
 		return nil
 	})
