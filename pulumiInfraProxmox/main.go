@@ -8,8 +8,7 @@ import (
 
 	"github.com/muhlba91/pulumi-proxmoxve/sdk/v7/go/proxmoxve"
 	"github.com/muhlba91/pulumi-proxmoxve/sdk/v7/go/proxmoxve/vm"
-
-	//	"github.com/pulumi/pulumi/sdk/v3/go/common/resource/config"
+	"github.com/pulumi/pulumi-command/sdk/go/command/remote"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
@@ -23,6 +22,7 @@ type UbuntuTemplate struct {
 	Memory   int64  `yaml:"memory"`
 	CPU      int64  `yaml:"cpu"`
 	IP       string `yaml:"ip"`
+	Gateway  string `yaml:"gateway"`
 }
 
 type SLETemplate struct {
@@ -37,7 +37,7 @@ type SLETemplate struct {
 	IP       string `yaml:"ip"`
 }
 
-func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress string, vmTemplateId, memory, cpu int64) (pulumi.IntOutput, pulumi.StringOutput, error) {
+func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress, gateway string, vmTemplateId, memory, cpu int64) (*vm.VirtualMachine, error) {
 	vmInstance, err := vm.NewVirtualMachine(ctx, name, &vm.VirtualMachineArgs{
 		Name:     pulumi.String(vmName),
 		NodeName: pulumi.String(nodeName),
@@ -73,11 +73,18 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 				Username: pulumi.String("rajeshk"),
 				Password: pulumi.String(vmPassword),
 			},
+			Dns: &vm.VirtualMachineInitializationDnsArgs{
+				Domain: pulumi.String("local"),
+				Servers: pulumi.StringArray{
+					pulumi.String("192.168.90.1"),
+					pulumi.String("8.8.8.8"),
+				},
+			},
 			IpConfigs: &vm.VirtualMachineInitializationIpConfigArray{
 				&vm.VirtualMachineInitializationIpConfigArgs{
 					Ipv4: &vm.VirtualMachineInitializationIpConfigIpv4Args{
 						Address: pulumi.String(ipAddress),
-						Gateway: pulumi.String("192.168.90.1"),
+						Gateway: pulumi.String(gateway),
 					},
 				},
 			},
@@ -89,10 +96,9 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 		Started: pulumi.Bool(true),
 	}, pulumi.Provider(provider))
 	if err != nil {
-		return pulumi.Int(0).ToIntOutput(), pulumi.String("").ToStringOutput(), err
+		return nil, err
 	}
-	return vmInstance.VmId, vmInstance.Name, nil
-
+	return vmInstance, nil
 }
 
 func incrementIP(ip string, increment int) string {
@@ -106,6 +112,28 @@ func incrementIP(ip string, increment int) string {
 	}
 	newLastOctet := lastoctet + increment
 	return fmt.Sprintf("%s.%s.%s.%d", parts[0], parts[1], parts[2], newLastOctet)
+}
+
+func installK3SServer(ctx *pulumi.Context, hostIP, vmPassword string, vmDependency pulumi.Resource) (*remote.Command, error) {
+	return remote.NewCommand(ctx, "server-prep", &remote.CommandArgs{
+		Connection: &remote.ConnectionArgs{
+			Host:     pulumi.String(hostIP),
+			User:     pulumi.String("rajeshk"),
+			Password: pulumi.String(vmPassword),
+		},
+		Create: pulumi.Sprintf(`
+				sudo tee /etc/resolv.conf << 'EOF'
+nameserver 192.168.90.1
+EOF
+				curl -sfL https://get.k3s.io | sh -s - server \
+				--cluster-init --tls-san=%s --tls-san=$(hostname -I | awk '{print $1}') \
+				--write-kubeconfig-mode 644 \
+				--node-external-ip=%s
+				sudo systemctl restart k3s
+				sudo k3s kubectl wait --for=condition=Ready nodes --all --timeout=300s
+				sudo cat /var/lib/rancher/k3s/server/node-token
+				`, hostIP, hostIP),
+	}, pulumi.DependsOn([]pulumi.Resource{vmDependency}))
 }
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
@@ -135,6 +163,7 @@ func main() {
 
 		proxmoxNode := cfg.Require("proxmox-node")
 		vmPassword := cfg.Require("password")
+		gateway := cfg.Require("gateway")
 
 		var ubuntuTemplate UbuntuTemplate
 		cfg.RequireObject("ubuntu-template", &ubuntuTemplate)
@@ -142,36 +171,42 @@ func main() {
 		var sleTemplate SLETemplate
 		cfg.RequireObject("sle-template", &sleTemplate)
 
-		ubuntuVmId, ubuntuVmName, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU)
+		ubuntuVM, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", gateway, ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU)
 		if err != nil {
-			return fmt.Errorf("cannot create %v VM: %w", ubuntuVmId, err)
+			return fmt.Errorf("cannot create %v VM: %w", ubuntuVM.Name, err)
 		}
 
-		var sleVmIds []pulumi.IntOutput
-		var sleVmNames []pulumi.StringOutput
+		var sleVMs []*vm.VirtualMachine
+		var sleServerIPs []string
 
 		for i := range sleTemplate.Count {
 			serverNum := i + 1
 			resourceName := fmt.Sprintf("sle-server-%d", serverNum)
 			vmName := fmt.Sprintf("%s%d", sleTemplate.VMName, serverNum)
 			serverIP := incrementIP(sleTemplate.IP, int(i))
-			fmt.Printf("Creating SLE server %d with IP %s\n", serverNum, serverIP)
+			sleServerIPs = append(sleServerIPs, serverIP)
+			ctx.Log.Info(fmt.Sprintf("Creating SLE K3s server %d with IP %s", serverNum, serverIP), nil)
 
-			sleVmId, sleVmName, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU)
+			sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU)
 			if err != nil {
 				return fmt.Errorf("cannot create SLE VM %s: %w", vmName, err)
 			}
-			sleVmIds = append(sleVmIds, sleVmId)
-			sleVmNames = append(sleVmNames, sleVmName)
+			sleVMs = append(sleVMs, sleVM)
 		}
-		ctx.Export("ubuntuVmId", ubuntuVmId)
-		ctx.Export("ubuntuVmName", ubuntuVmName)
+		if len(sleVMs) > 0 {
+			_, err := installK3SServer(ctx, sleServerIPs[0], vmPassword, sleVMs[0])
+			if err != nil {
+				return fmt.Errorf("cannot install K3s server: %w", err)
+			}
+		}
+
+		ctx.Export("ubuntuVmId", ubuntuVM.ID())
 		ctx.Export("number of k3s nodes", pulumi.Int(sleTemplate.Count))
 
-		for i, vmId := range sleVmIds {
-			ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), vmId)
-			ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVmNames[i])
-
+		for i, sleVM := range sleVMs {
+			ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), sleVM.VmId)
+			ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVM.Name)
+			ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(sleServerIPs[i]))
 		}
 		return nil
 	})
