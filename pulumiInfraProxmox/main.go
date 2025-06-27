@@ -307,23 +307,13 @@ func main() {
 				PrivateKey: pulumi.String(os.Getenv("PROXMOX_VE_SSH_PRIVATE_KEY")),
 				Username:   pulumi.String(os.Getenv("PROXMOX_VE_SSH_USERNAME")),
 			},
-			Insecure: pulumi.Bool(true),
+			Insecure: pulumi.Bool(true), // for self signed certificate
 		})
 
 		if err != nil {
 			return fmt.Errorf("error getting Proxmox nodes: %w", err)
 		}
 
-		//nodes, err := cluster.GetNodes(ctx, nil)
-		// Iterate over the nodes and print their names.
-		//if err != nil {
-		//	return fmt.Errorf("error getting Proxmox nodes: %w", err)
-		//}
-		//ctx.Log.Info("Proxmox Nodes:", nil)
-		//for i, nodeName := range nodes.Names {
-		//	fmt.Printf("\n--- Node %d: %s ---\n", i, nodeName)
-
-		//}
 		cfg := config.New(ctx, "")
 
 		proxmoxNode := cfg.Require("proxmox-node")
@@ -353,7 +343,7 @@ func main() {
 		}
 
 		var sleVMs []*vm.VirtualMachine
-		//var sleServerIPs []string
+
 		var k3sCommands []*remote.Command
 		var k3sServerToken pulumi.StringOutput
 
