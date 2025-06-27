@@ -37,6 +37,27 @@ type SLETemplate struct {
 	IP       string `yaml:"ip"`
 }
 
+func checkRequiredEnvVars() error {
+	required := []string{
+		"SSH_PUBLIC_KEY",
+		"PROXMOX_VE_SSH_USERNAME",
+		"PROXMOX_VE_ENDPOINT",
+		"PROXMOX_VE_API_TOKEN",
+		"PROXMOX_VE_SSH_PRIVATE_KEY",
+	}
+
+	var missingEnvVars []string
+	for _, envVar := range required {
+		if os.Getenv(envVar) == "" {
+			missingEnvVars = append(missingEnvVars, envVar)
+		}
+	}
+	if len(missingEnvVars) > 0 {
+		return fmt.Errorf("missing required environment variables: %v", missingEnvVars)
+	}
+	return nil
+}
+
 func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress, gateway string, vmTemplateId, memory, cpu int64, useSSHKey bool) (*vm.VirtualMachine, error) {
 	var userAccount *vm.VirtualMachineInitializationUserAccountArgs
 	if useSSHKey {
@@ -278,11 +299,15 @@ func getK3sToken(ctx *pulumi.Context, firstServerIP, vmPassword string, vmDepend
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 
+		if err := checkRequiredEnvVars(); err != nil {
+			return err
+		}
 		provider, err := proxmoxve.NewProvider(ctx, "proxmox-provider", &proxmoxve.ProviderArgs{
 			Ssh: &proxmoxve.ProviderSshArgs{
 				PrivateKey: pulumi.String(os.Getenv("PROXMOX_VE_SSH_PRIVATE_KEY")),
 				Username:   pulumi.String(os.Getenv("PROXMOX_VE_SSH_USERNAME")),
 			},
+			Insecure: pulumi.Bool(true),
 		})
 
 		if err != nil {
