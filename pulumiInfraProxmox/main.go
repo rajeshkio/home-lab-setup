@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/muhlba91/pulumi-proxmoxve/sdk/v7/go/proxmoxve"
@@ -13,28 +12,20 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
-type UbuntuTemplate struct {
-	Name     string `yaml:"name"`
-	VMName   string `yaml:"vmName"`
-	Password string `yaml:"password"`
-	ID       int64  `yaml:"id"`
-	DiskSize int64  `yaml:"disksize"`
-	Memory   int64  `yaml:"memory"`
-	CPU      int64  `yaml:"cpu"`
-	IP       string `yaml:"ip"`
-	Gateway  string `yaml:"gateway"`
-}
-
-type SLETemplate struct {
-	Name     string `yaml:"name"`
-	Count    int64  `yaml:"count"`
-	Password string `yaml:"password"`
-	VMName   string `yaml:"vmName"`
-	ID       int64  `yaml:"id"`
-	DiskSize int64  `yaml:"disksize"`
-	Memory   int64  `yaml:"memory"`
-	CPU      int64  `yaml:"cpu"`
-	IP       string `yaml:"ip"`
+type VMTemplate struct {
+	Name       string   `yaml:"name"`
+	VMName     string   `yaml:"vmName"`
+	ID         int64    `yaml:"id"`
+	DiskSize   int64    `yaml:"disksize"`
+	Memory     int64    `yaml:"memory"`
+	CPU        int64    `yaml:"cpu"`
+	IPConfig   string   `yaml:"ipconfig"`
+	IPs        []string `yaml:"ips,omitempty"`
+	Gateway    string   `yaml:"gateway"`
+	Username   string   `yaml:"username"`
+	Password   string   `yaml:"password,omitempty"`
+	AuthMethod string   `yaml:"auth-method"`
+	Count      int64    `yaml:"count,omitempty"`
 }
 
 func checkRequiredEnvVars() error {
@@ -58,41 +49,58 @@ func checkRequiredEnvVars() error {
 	return nil
 }
 
-func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, name, vmName, nodeName, vmPassword, ipAddress, gateway string, vmTemplateId, memory, cpu int64, useSSHKey bool) (*vm.VirtualMachine, error) {
+func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmIndex int64, template VMTemplate, nodeName, gateway, password string) (*vm.VirtualMachine, error) {
 	var userAccount *vm.VirtualMachineInitializationUserAccountArgs
-	if useSSHKey {
-		// For Ubuntu VM: Use SSH key from environment variable
-		sshPublicKey := os.Getenv("SSH_PUBLIC_KEY")
-		if sshPublicKey == "" {
-			return nil, fmt.Errorf("SSH_PUBLIC_KEY environment variable is required for Ubuntu VM")
-		}
+
+	ctx.Log.Info(fmt.Sprintf("Creating VM with auth-method: %s, username: %s, password: %s", template.AuthMethod, template.Username, password), nil)
+	if template.AuthMethod == "ssh-key" {
 		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
-			Username: pulumi.String("rajeshk"),
+			Username: pulumi.String(template.Username),
 			Keys: pulumi.StringArray{
-				pulumi.String(sshPublicKey),
+				pulumi.String(os.Getenv("SSH_PUBLIC_KEY")),
 			},
 		}
 	} else {
 		// For SLE VMs: Use password authentication
 		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
-			Username: pulumi.String("rajeshk"),
-			Password: pulumi.String(vmPassword),
+			Username: pulumi.String(template.Username),
+			Password: pulumi.String(password),
 		}
 	}
 
-	vmInstance, err := vm.NewVirtualMachine(ctx, name, &vm.VirtualMachineArgs{
+	var ipConfig *vm.VirtualMachineInitializationIpConfigArray
+	if template.IPConfig == "static" {
+		ctx.Export(fmt.Sprintf("vmIndex:%d", vmIndex), nil)
+		ctx.Export(fmt.Sprintf("len of template.IPs:%d", len(template.IPs)), nil)
+		if vmIndex >= int64(len(template.IPs)) {
+			return nil, fmt.Errorf("not enough IPs provided for VM %d", vmIndex)
+		}
+		ipConfig = &vm.VirtualMachineInitializationIpConfigArray{
+			&vm.VirtualMachineInitializationIpConfigArgs{
+				Ipv4: vm.VirtualMachineInitializationIpConfigIpv4Args{
+					Address: pulumi.String(template.IPs[vmIndex] + "/24"),
+					Gateway: pulumi.String(gateway),
+				},
+			},
+		}
+	} else {
+		ipConfig = nil
+	}
+	vmName := fmt.Sprintf("%s-%d", template.VMName, vmIndex)
+
+	vmInstance, err := vm.NewVirtualMachine(ctx, template.Name+fmt.Sprintf("%d", vmIndex), &vm.VirtualMachineArgs{
 		Name:     pulumi.String(vmName),
 		NodeName: pulumi.String(nodeName),
 		Memory: &vm.VirtualMachineMemoryArgs{
-			Dedicated: pulumi.Int(memory),
+			Dedicated: pulumi.Int(template.Memory),
 		},
 		Cpu: &vm.VirtualMachineCpuArgs{
-			Cores: pulumi.Int(cpu),
+			Cores: pulumi.Int(template.CPU),
 			Type:  pulumi.String("x86-64-v2-AES"),
 		},
 		Clone: &vm.VirtualMachineCloneArgs{
 			NodeName: pulumi.String(nodeName),
-			VmId:     pulumi.Int(vmTemplateId),
+			VmId:     pulumi.Int(template.ID),
 		},
 		Disks: &vm.VirtualMachineDiskArray{
 			&vm.VirtualMachineDiskArgs{
@@ -119,14 +127,7 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 					pulumi.String("8.8.8.8"),
 				},
 			},
-			IpConfigs: &vm.VirtualMachineInitializationIpConfigArray{
-				&vm.VirtualMachineInitializationIpConfigArgs{
-					Ipv4: &vm.VirtualMachineInitializationIpConfigIpv4Args{
-						Address: pulumi.String(ipAddress),
-						Gateway: pulumi.String(gateway),
-					},
-				},
-			},
+			IpConfigs: ipConfig,
 		},
 		Started: pulumi.Bool(true),
 	}, pulumi.Provider(provider))
@@ -134,19 +135,6 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, nam
 		return nil, err
 	}
 	return vmInstance, nil
-}
-
-func incrementIP(ip string, increment int) string {
-	parts := strings.Split(ip, ".")
-	if len(parts) != 4 {
-		return ip
-	}
-	lastoctet, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return ip
-	}
-	newLastOctet := lastoctet + increment
-	return fmt.Sprintf("%s.%s.%s.%d", parts[0], parts[1], parts[2], newLastOctet)
 }
 
 func installHaProxy(ctx *pulumi.Context, lbIP string, vmDependency pulumi.Resource, k3sServerIPs []string) (*remote.Command, error) {
@@ -310,18 +298,17 @@ func setupProxmoxProvider(ctx *pulumi.Context) (*proxmoxve.Provider, error) {
 	return provider, nil
 }
 
-func loadConfig(ctx *pulumi.Context) (string, string, string, UbuntuTemplate, SLETemplate, error) {
+func loadConfig(ctx *pulumi.Context) (string, string, string, []VMTemplate, error) {
 	cfg := config.New(ctx, "")
 	proxmoxNode := cfg.Require("proxmox-node")
 	vmPassword := cfg.Require("password")
 	gateway := cfg.Require("gateway")
 
-	var ubuntuTemplate UbuntuTemplate
-	cfg.RequireObject("ubuntu-template", &ubuntuTemplate)
+	var templates []VMTemplate
+	cfg.RequireObject("vm-templates", &templates)
 
-	var sleTemplate SLETemplate
-	cfg.RequireObject("sle-template", &sleTemplate)
-	return proxmoxNode, vmPassword, gateway, ubuntuTemplate, sleTemplate, nil
+	ctx.Export("vmPassword", pulumi.String(vmPassword))
+	return proxmoxNode, vmPassword, gateway, templates, nil
 
 }
 
@@ -335,80 +322,101 @@ func main() {
 		if err != nil {
 			return fmt.Errorf("failed to setup Proxmox provider: %w", err)
 		}
+		fmt.Println(provider)
 
-		proxmoxNode, vmPassword, gateway, ubuntuTemplate, sleTemplate, err := loadConfig(ctx)
+		proxmoxNode, vmPassword, gateway, templates, err := loadConfig(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		ubuntuVM, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", gateway, ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU, true)
-		if err != nil {
-			return fmt.Errorf("cannot create %v VM: %w", ubuntuVM.Name, err)
-		}
-
-		var k3sServerIPs []string
-		for i := range sleTemplate.Count {
-			serverIP := incrementIP(sleTemplate.IP, int(i))
-			k3sServerIPs = append(k3sServerIPs, serverIP)
-		}
-
-		haproxyCmd, err := installHaProxy(ctx, ubuntuTemplate.IP, ubuntuVM, k3sServerIPs)
-		if err != nil {
-			return fmt.Errorf("cannot install HAProxy: %w", err)
-		}
-
-		var sleVMs []*vm.VirtualMachine
-
-		var k3sCommands []*remote.Command
-		var k3sServerToken pulumi.StringOutput
-
-		for i := range sleTemplate.Count {
-			serverNum := i + 1
-			resourceName := fmt.Sprintf("sle-server-%d", serverNum)
-			vmName := fmt.Sprintf("%s%d", sleTemplate.VMName, serverNum)
-			serverIP := k3sServerIPs[i]
-			ctx.Log.Info(fmt.Sprintf("Creating SLE K3s server %d with IP %s", serverNum, serverIP), nil)
-
-			sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU, false)
-			if err != nil {
-				return fmt.Errorf("cannot create SLE VM %s: %w", vmName, err)
+		var allVMs []*vm.VirtualMachine
+		for _, template := range templates {
+			count := template.Count
+			if count == 0 {
+				count = 1
 			}
-			sleVMs = append(sleVMs, sleVM)
 
-			if i == 0 {
-				firstServerIP := serverIP
-				k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, firstServerIP, sleVM, true, pulumi.String("").ToStringOutput(), haproxyCmd)
+			for i := range count {
+				vm, err := createVMFromTemplate(ctx, provider, i, template, proxmoxNode, gateway, vmPassword)
 				if err != nil {
-					return fmt.Errorf("cannot install K3s server on first node %s: %w", firstServerIP, err)
+					return fmt.Errorf("cannot create VM %s: %w", template.VMName, err)
 				}
-				k3sCommands = append(k3sCommands, k3sCmd)
-				tokenCmd, err := getK3sToken(ctx, firstServerIP, vmPassword, k3sCmd)
-				if err != nil {
-					return fmt.Errorf("cannot get K3s token from first server: %w", err)
-				}
-				k3sServerToken = tokenCmd.Stdout
-			} else {
-				k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, serverIP, sleVM, false, k3sServerToken, haproxyCmd)
-				if err != nil {
-					return fmt.Errorf("cannot install K3s on server %s: %w", serverIP, err)
-				}
-				k3sCommands = append(k3sCommands, k3sCmd)
+				allVMs = append(allVMs, vm)
+				ctx.Log.Info(fmt.Sprintf("Created VM: %s", template.VMName), nil)
 			}
 		}
 
-		ctx.Export("ubuntuVmId", ubuntuVM.ID())
-		ctx.Export("ubuntuVMName", ubuntuVM.Name)
-		ctx.Export("number of k3s nodes", pulumi.Int(sleTemplate.Count))
+		fmt.Println(vmPassword)
+		ctx.Export("totalVMsCreated", pulumi.Int(len(allVMs)))
 
-		for i, sleVM := range sleVMs {
-			ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), sleVM.VmId)
-			ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVM.Name)
-			ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(k3sServerIPs[i]))
-		}
+		//
+		// if err != nil {
+		// 	return fmt.Errorf("cannot create %v VM: %w", template.Name, err)
+		// }
 
-		for i, k3sCmd := range k3sCommands {
-			ctx.Export(fmt.Sprintf("k3sServer%dInstallStatus", i+1), k3sCmd.Stdout)
-		}
+		// var k3sServerIPs []string
+		// for i := range sleTemplate.Count {
+		// 	serverIP := incrementIP(sleTemplate.IP, int(i))
+		// 	k3sServerIPs = append(k3sServerIPs, serverIP)
+		// }
+
+		// haproxyCmd, err := installHaProxy(ctx, ubuntuTemplate.IP, ubuntuVM, k3sServerIPs)
+		// if err != nil {
+		// 	return fmt.Errorf("cannot install HAProxy: %w", err)
+		// }
+
+		// var sleVMs []*vm.VirtualMachine
+
+		// var k3sCommands []*remote.Command
+		// var k3sServerToken pulumi.StringOutput
+
+		// for i := range sleTemplate.Count {
+		// 	serverNum := i + 1
+		// 	resourceName := fmt.Sprintf("sle-server-%d", serverNum)
+		// 	vmName := fmt.Sprintf("%s%d", sleTemplate.VMName, serverNum)
+		// 	serverIP := k3sServerIPs[i]
+		// 	ctx.Log.Info(fmt.Sprintf("Creating SLE K3s server %d with IP %s", serverNum, serverIP), nil)
+
+		// 	sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU, false)
+		// 	if err != nil {
+		// 		return fmt.Errorf("cannot create SLE VM %s: %w", vmName, err)
+		// 	}
+		// 	sleVMs = append(sleVMs, sleVM)
+
+		// 	if i == 0 {
+		// 		firstServerIP := serverIP
+		// 		k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, firstServerIP, sleVM, true, pulumi.String("").ToStringOutput(), haproxyCmd)
+		// 		if err != nil {
+		// 			return fmt.Errorf("cannot install K3s server on first node %s: %w", firstServerIP, err)
+		// 		}
+		// 		k3sCommands = append(k3sCommands, k3sCmd)
+		// 		tokenCmd, err := getK3sToken(ctx, firstServerIP, vmPassword, k3sCmd)
+		// 		if err != nil {
+		// 			return fmt.Errorf("cannot get K3s token from first server: %w", err)
+		// 		}
+		// 		k3sServerToken = tokenCmd.Stdout
+		// 	} else {
+		// 		k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, serverIP, sleVM, false, k3sServerToken, haproxyCmd)
+		// 		if err != nil {
+		// 			return fmt.Errorf("cannot install K3s on server %s: %w", serverIP, err)
+		// 		}
+		// 		k3sCommands = append(k3sCommands, k3sCmd)
+		// 	}
+		// }
+
+		// ctx.Export("ubuntuVmId", ubuntuVM.ID())
+		// ctx.Export("ubuntuVMName", ubuntuVM.Name)
+		// ctx.Export("number of k3s nodes", pulumi.Int(sleTemplate.Count))
+
+		// for i, sleVM := range sleVMs {
+		// 	ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), sleVM.VmId)
+		// 	ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVM.Name)
+		// 	ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(k3sServerIPs[i]))
+		// }
+
+		// for i, k3sCmd := range k3sCommands {
+		// 	ctx.Export(fmt.Sprintf("k3sServer%dInstallStatus", i+1), k3sCmd.Stdout)
+		// }
 		return nil
 	})
 }
