@@ -296,35 +296,50 @@ func getK3sToken(ctx *pulumi.Context, firstServerIP, vmPassword string, vmDepend
 	return cmd, err
 }
 
+func setupProxmoxProvider(ctx *pulumi.Context) (*proxmoxve.Provider, error) {
+	provider, err := proxmoxve.NewProvider(ctx, "proxmox-provider", &proxmoxve.ProviderArgs{
+		Ssh: &proxmoxve.ProviderSshArgs{
+			PrivateKey: pulumi.String(os.Getenv("PROXMOX_VE_SSH_PRIVATE_KEY")),
+			Username:   pulumi.String(os.Getenv("PROXMOX_VE_SSH_USERNAME")),
+		},
+		Insecure: pulumi.Bool(true), // for self signed certificate
+	})
+	if err != nil {
+		return nil, err
+	}
+	return provider, nil
+}
+
+func loadConfig(ctx *pulumi.Context) (string, string, string, UbuntuTemplate, SLETemplate, error) {
+	cfg := config.New(ctx, "")
+	proxmoxNode := cfg.Require("proxmox-node")
+	vmPassword := cfg.Require("password")
+	gateway := cfg.Require("gateway")
+
+	var ubuntuTemplate UbuntuTemplate
+	cfg.RequireObject("ubuntu-template", &ubuntuTemplate)
+
+	var sleTemplate SLETemplate
+	cfg.RequireObject("sle-template", &sleTemplate)
+	return proxmoxNode, vmPassword, gateway, ubuntuTemplate, sleTemplate, nil
+
+}
+
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 
 		if err := checkRequiredEnvVars(); err != nil {
 			return err
 		}
-		provider, err := proxmoxve.NewProvider(ctx, "proxmox-provider", &proxmoxve.ProviderArgs{
-			Ssh: &proxmoxve.ProviderSshArgs{
-				PrivateKey: pulumi.String(os.Getenv("PROXMOX_VE_SSH_PRIVATE_KEY")),
-				Username:   pulumi.String(os.Getenv("PROXMOX_VE_SSH_USERNAME")),
-			},
-			Insecure: pulumi.Bool(true), // for self signed certificate
-		})
-
+		provider, err := setupProxmoxProvider(ctx)
 		if err != nil {
-			return fmt.Errorf("error getting Proxmox nodes: %w", err)
+			return fmt.Errorf("failed to setup Proxmox provider: %w", err)
 		}
 
-		cfg := config.New(ctx, "")
-
-		proxmoxNode := cfg.Require("proxmox-node")
-		vmPassword := cfg.Require("password")
-		gateway := cfg.Require("gateway")
-
-		var ubuntuTemplate UbuntuTemplate
-		cfg.RequireObject("ubuntu-template", &ubuntuTemplate)
-
-		var sleTemplate SLETemplate
-		cfg.RequireObject("sle-template", &sleTemplate)
+		proxmoxNode, vmPassword, gateway, ubuntuTemplate, sleTemplate, err := loadConfig(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
 
 		ubuntuVM, err := createVMFromTemplate(ctx, provider, "ubuntu-test", ubuntuTemplate.VMName, proxmoxNode, vmPassword, ubuntuTemplate.IP+"/24", gateway, ubuntuTemplate.ID, ubuntuTemplate.Memory, ubuntuTemplate.CPU, true)
 		if err != nil {
