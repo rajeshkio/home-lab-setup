@@ -4,20 +4,41 @@ config:
   proxmox-k3s-cluster:proxmox-node: proxmox-2
   gateway: "192.168.90.1"
 
-  proxmox-k3s-cluster:sle-template:
-    count: 3
-    cpu: 10
-    disk-size: 100
-    id: 9001
-    ip: 192.168.90.187
-    memory: 10000
-    name: sle-micro-template
-    vmName: k3s-server-
-  proxmox-k3s-cluster:ubuntu-template:
-    cpu: 2
-    disk-size: 20
-    id: 9000
-    ip: 192.168.90.190
-    memory: 2000
-    name: ubuntu-22.04-template
-    vmName: loadbalancer
+  proxmox-k3s-cluster:vm-templates:
+    - count: 3
+      cpu: 10
+      disk-size: 100
+      id: 9001
+      ipconfig: static
+      ips: ["192.168.90.187", "192.168.90.188", "192.168.90.189"]
+      memory: 10000
+      name: sle-micro-template
+      vmName: k3s-server
+      username: rajeshk
+      authMethod: password
+      role: k3s-server
+      actions:
+        - type: "install-k3s-server"
+          depends-on: ["loadbalancer"]
+        - type: "get-kubeconfig"
+          depends-on: ["loadbalancer"]
+          config:
+            cluster-init: true
+            tls-san-loadbalancer: true
+    - count: 1
+      cpu: 2
+      disk-size: 20
+      id: 9000
+      ips: ["192.168.90.190"]
+      memory: 2000
+      ipconfig: static
+      name: ubuntu-22.04-template
+      vmName: loadbalancer
+      username: rajeshk
+      authMethod: ssh-key
+      role: loadbalancer
+      actions:
+        - type: "install-haproxy"
+          config:
+            backend-port: 6443
+            frontend-port: 6443

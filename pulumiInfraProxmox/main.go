@@ -12,6 +12,21 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
+type Action struct {
+	Type      string                 `yaml:"type"`
+	DependsOn []string               `yaml:"depends-on,omitempty"`
+	Config    map[string]interface{} `yaml:"config,omitempty"`
+}
+
+type ActionContext struct {
+	VMs          []*vm.VirtualMachine
+	IPs          []string
+	GlobalDeps   map[string]interface{} // Results from other actions/roles
+	ActionConfig map[string]interface{} // Config from YAML
+	VMPassword   string
+	Templates    VMTemplate
+}
+
 type VMTemplate struct {
 	Name       string   `yaml:"name"`
 	VMName     string   `yaml:"vmName"`
@@ -23,9 +38,89 @@ type VMTemplate struct {
 	IPs        []string `yaml:"ips,omitempty"`
 	Gateway    string   `yaml:"gateway"`
 	Username   string   `yaml:"username"`
-	Password   string   `yaml:"password,omitempty"`
-	AuthMethod string   `yaml:"auth-method"`
+	Password   string   `yaml:"password,omitempty"` // global password
+	AuthMethod string   `yaml:"authMethod"`
 	Count      int64    `yaml:"count,omitempty"`
+	Role       string   `yaml:"role,omitempty"` // NEW!
+	Actions    []Action `yaml:"actions,omitempty"`
+}
+
+type RoleGroup struct {
+	VMs []*vm.VirtualMachine
+	IPs []string
+}
+type ActionHandler func(ctx *pulumi.Context, actionctx ActionContext) error
+
+var actionHandlers = map[string]ActionHandler{
+	"install-haproxy":    handleInstallHAProxy,
+	"install-k3s-server": handleInstallK3Sserver,
+	"get-kubeconfig":     handleGetKubeconfig,
+}
+
+func handleInstallHAProxy(ctx *pulumi.Context, actionctx ActionContext) error {
+
+	k3sServerIPs, ok := actionctx.GlobalDeps["k3s-server-ips"].([]string)
+	if !ok {
+		return fmt.Errorf("haproxy needs k3s server ips but they are not available")
+	}
+	lbIP := actionctx.IPs[0]
+	lbVM := actionctx.VMs[0]
+
+	ctx.Log.Info(fmt.Sprintf("installing haproxy on %s with backends: %v", lbIP, k3sServerIPs), nil)
+	ctx.Log.Info(fmt.Sprintf("VM dependency: %s", lbVM.ID()), nil)
+
+	_, err := installHaProxy(ctx, lbIP, lbVM, k3sServerIPs)
+	if err != nil {
+		ctx.Log.Error(fmt.Sprintf("HAProxy installation failed: %v", err), nil)
+	}
+	return err
+}
+
+func handleInstallK3Sserver(ctx *pulumi.Context, actionctx ActionContext) error {
+	lbIPs, ok := actionctx.GlobalDeps["loadbalancer-ips"].([]string)
+	if !ok {
+		return fmt.Errorf("k3s server needs loadbalancer IP but its not available")
+	}
+
+	lbIP := lbIPs[0]
+	ctx.Log.Info(fmt.Sprintf("installing k3s server with LBIP: %s", lbIP), nil)
+	//var k3sCommands []*remote.Command
+	var k3sServerToken pulumi.StringOutput
+	var firstServerIP string
+
+	for i, serverVM := range actionctx.VMs {
+		serverIP := actionctx.IPs[i]
+		isFirstServer := (i == 0)
+
+		ctx.Log.Info(fmt.Sprintf("Installing K3s on server %d: %s", i+1, serverIP), nil)
+
+		if isFirstServer {
+			firstServerIP = serverIP
+			ctx.Log.Info(fmt.Sprintf("installing k3s on server %d: %s", i+1, serverIP), nil)
+
+			k3sCmd, err := installK3SServer(ctx, lbIP, actionctx.VMPassword, serverIP, serverVM, true, pulumi.String("").ToStringOutput(), nil)
+			if err != nil {
+				return fmt.Errorf("cannot install K3s server on first node %s: %w", serverIP, err)
+			}
+			//	k3sCommands = append(k3sCommands, k3sCmd)
+			tokenCmd, err := getK3sToken(ctx, serverIP, actionctx.VMPassword, k3sCmd)
+			if err != nil {
+				return fmt.Errorf("cannot get k3s token: %w", err)
+			}
+			k3sServerToken = tokenCmd.Stdout
+		} else {
+			_, err := installK3SServer(ctx, lbIP, actionctx.VMPassword, serverIP, serverVM, false, k3sServerToken, nil)
+			if err != nil {
+				return fmt.Errorf("cannot install k3s on server %s: %w", serverIP, serverVM)
+			}
+			//		k3sCommands = append(k3sCommands, k3sCmds)
+		}
+	}
+
+	actionctx.GlobalDeps["k3s-first-server-ip"] = firstServerIP
+	actionctx.GlobalDeps["k3s-loadbalancer-ip"] = lbIP
+	ctx.Log.Info(fmt.Sprintf("K3s installation initiated on %d servers", len(actionctx.VMs)), nil)
+	return nil
 }
 
 func checkRequiredEnvVars() error {
@@ -53,11 +148,16 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmI
 	var userAccount *vm.VirtualMachineInitializationUserAccountArgs
 
 	ctx.Log.Info(fmt.Sprintf("Creating VM with auth-method: %s, username: %s, password: %s", template.AuthMethod, template.Username, password), nil)
+	ctx.Log.Info(fmt.Sprintf("Template debug - Role: %s, AuthMethod: '%s', Username: %s", template.Role, template.AuthMethod, template.Username), nil)
+
 	if template.AuthMethod == "ssh-key" {
+		sshKey := strings.TrimSpace(os.Getenv("SSH_PUBLIC_KEY"))
+		ctx.Log.Info(fmt.Sprintf("SSH KEY from env first 100 char: %s", sshKey[:100]), nil)
+		ctx.Log.Info(fmt.Sprintf("SSH KEY length: %d", len(sshKey)), nil)
 		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
 			Username: pulumi.String(template.Username),
 			Keys: pulumi.StringArray{
-				pulumi.String(os.Getenv("SSH_PUBLIC_KEY")),
+				pulumi.String(sshKey),
 			},
 		}
 	} else {
@@ -88,7 +188,7 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmI
 	}
 	vmName := fmt.Sprintf("%s-%d", template.VMName, vmIndex)
 
-	vmInstance, err := vm.NewVirtualMachine(ctx, template.Name+fmt.Sprintf("%d", vmIndex), &vm.VirtualMachineArgs{
+	vmInstance, err := vm.NewVirtualMachine(ctx, template.Name+fmt.Sprintf("-%d", vmIndex), &vm.VirtualMachineArgs{
 		Name:     pulumi.String(vmName),
 		NodeName: pulumi.String(nodeName),
 		Memory: &vm.VirtualMachineMemoryArgs{
@@ -137,6 +237,38 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmI
 	return vmInstance, nil
 }
 
+func groupVMsByRole(allVMs []*vm.VirtualMachine, templates []VMTemplate) map[string]RoleGroup {
+	roleGroups := make(map[string]RoleGroup) // map with key string and value of type rolegroup
+	vmIndex := 0
+
+	for _, template := range templates {
+		count := template.Count
+		if count == 0 {
+			count = 1
+		}
+		for i := range count {
+			if _, exists := roleGroups[template.Role]; !exists {
+				roleGroups[template.Role] = RoleGroup{}
+			}
+			group := roleGroups[template.Role]
+			group.VMs = append(group.VMs, allVMs[vmIndex])
+			group.IPs = append(group.IPs, template.IPs[i])
+			roleGroups[template.Role] = group
+			vmIndex++
+		}
+	}
+	return roleGroups
+}
+
+func buildGlobalDependency(roleGroups map[string]RoleGroup) map[string]interface{} {
+	globalDeps := make(map[string]interface{})
+
+	for roleName, group := range roleGroups {
+		globalDeps[roleName+"-ips"] = group.IPs
+		globalDeps[roleName+"-vms"] = group.VMs
+	}
+	return globalDeps
+}
 func installHaProxy(ctx *pulumi.Context, lbIP string, vmDependency pulumi.Resource, k3sServerIPs []string) (*remote.Command, error) {
 
 	var backendServers strings.Builder
@@ -311,7 +443,79 @@ func loadConfig(ctx *pulumi.Context) (string, string, string, []VMTemplate, erro
 	return proxmoxNode, vmPassword, gateway, templates, nil
 
 }
+func executeAction(ctx *pulumi.Context, action Action, template VMTemplate, roleGroups RoleGroup, globalDeps map[string]interface{}, vmpassword string) error {
+	actionCtx := ActionContext{
+		VMs:          roleGroups.VMs,
+		IPs:          roleGroups.IPs,
+		GlobalDeps:   globalDeps,
+		ActionConfig: action.Config,
+		VMPassword:   vmpassword,
+		Templates:    template,
+	}
 
+	if handler, exists := actionHandlers[action.Type]; exists {
+		return handler(ctx, actionCtx)
+	} else {
+		return fmt.Errorf("unknown action type: %s", action.Type)
+	}
+}
+func executeActions(ctx *pulumi.Context, templates []VMTemplate, roleGroups map[string]RoleGroup, globalDeps map[string]interface{}, vmPassword string) error {
+	for _, template := range templates {
+		roleGroup := roleGroups[template.Role]
+
+		for _, action := range template.Actions {
+			ctx.Log.Info(fmt.Sprintf("Executing action '%s' for role '%s'", action.Type, template.Role), nil)
+
+			err := executeAction(ctx, action, template, roleGroup, globalDeps, vmPassword)
+			if err != nil {
+				return fmt.Errorf("failed to execute action %s for role %s: %w", action.Type, template.Role, err)
+			}
+		}
+	}
+	return nil
+}
+
+func getK3sKubeconfig(ctx *pulumi.Context, template VMTemplate, serverIP, vmPassword, lbIP string, vmDependency pulumi.Resource) (*remote.Command, error) {
+	resourceName := fmt.Sprintf("k3s-kubeconfig-%s", strings.ReplaceAll(serverIP, ".", "-"))
+
+	kubeconfigCommand := fmt.Sprintf(`
+		while [ ! -f /etc/rancher/k3s/k3s.yaml ]; do
+			echo "Waiting for kubeconfig..."
+			sleep 5
+		done
+
+		sudo cat /etc/rancher/k3s/k3s.yaml | sed 's/127.0.0.1:6443/%s:6443/g'`, lbIP)
+
+	cmd, err := remote.NewCommand(ctx, resourceName, &remote.CommandArgs{
+		Connection: &remote.ConnectionArgs{
+			Host:     pulumi.String(serverIP),
+			User:     pulumi.String(template.Username),
+			Password: pulumi.String(vmPassword),
+		},
+		Create: pulumi.String(kubeconfigCommand),
+	}, pulumi.DependsOn([]pulumi.Resource{vmDependency}))
+	return cmd, err
+}
+
+func handleGetKubeconfig(ctx *pulumi.Context, actionctx ActionContext) error {
+	lbIPs, ok := actionctx.GlobalDeps["loadbalancer-ips"].([]string)
+	if !ok {
+		return fmt.Errorf("kubeconfig needs loadbalancer IP but it's not available")
+	}
+
+	firstServerIP := actionctx.IPs[0]
+	firstServerVM := actionctx.VMs[0]
+	lbIP := lbIPs[0]
+
+	ctx.Log.Info(fmt.Sprintf("Getting kubeconfig from %s with LB IP %s", firstServerIP, lbIP), nil)
+	cmd, err := getK3sKubeconfig(ctx, actionctx.Templates, firstServerIP, actionctx.VMPassword, lbIP, firstServerVM)
+	if err != nil {
+		return fmt.Errorf("failed to get kubeconfig: %w", err)
+	}
+	ctx.Export("kubeconfig", cmd.Stdout)
+	ctx.Log.Info("kubeconfig exported successfully", nil)
+	return nil
+}
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 
@@ -339,84 +543,38 @@ func main() {
 			for i := range count {
 				vm, err := createVMFromTemplate(ctx, provider, i, template, proxmoxNode, gateway, vmPassword)
 				if err != nil {
-					return fmt.Errorf("cannot create VM %s: %w", template.VMName, err)
+					return fmt.Errorf("cannot create VM %s: %w", fmt.Sprintf("%s-%d", template.VMName, i), err)
 				}
 				allVMs = append(allVMs, vm)
-				ctx.Log.Info(fmt.Sprintf("Created VM: %s", template.VMName), nil)
+				ctx.Log.Info(fmt.Sprintf("Created VM: %s", fmt.Sprintf("%s-%d", template.VMName, i)), nil)
 			}
 		}
 
-		fmt.Println(vmPassword)
+		roleGroups := groupVMsByRole(allVMs, templates)
+		globalDeps := buildGlobalDependency(roleGroups)
+
+		for roleName, group := range roleGroups {
+			ctx.Log.Info(fmt.Sprintf("Role '%s': %d with VM with IPs %v", roleName, len(group.VMs), group.IPs), nil)
+		}
+
 		ctx.Export("totalVMsCreated", pulumi.Int(len(allVMs)))
+		for roleName, group := range roleGroups {
+			ctx.Export(fmt.Sprintf("%s-count", roleName), pulumi.Int(len(allVMs)))
+			ctx.Export(fmt.Sprintf("%s-ips", roleName), pulumi.StringArray(
+				func() []pulumi.StringInput {
+					result := make([]pulumi.StringInput, len(group.IPs))
+					for i, ip := range group.IPs {
+						result[i] = pulumi.String(ip)
+					}
+					return result
+				}(),
+			))
+		}
 
-		//
-		// if err != nil {
-		// 	return fmt.Errorf("cannot create %v VM: %w", template.Name, err)
-		// }
-
-		// var k3sServerIPs []string
-		// for i := range sleTemplate.Count {
-		// 	serverIP := incrementIP(sleTemplate.IP, int(i))
-		// 	k3sServerIPs = append(k3sServerIPs, serverIP)
-		// }
-
-		// haproxyCmd, err := installHaProxy(ctx, ubuntuTemplate.IP, ubuntuVM, k3sServerIPs)
-		// if err != nil {
-		// 	return fmt.Errorf("cannot install HAProxy: %w", err)
-		// }
-
-		// var sleVMs []*vm.VirtualMachine
-
-		// var k3sCommands []*remote.Command
-		// var k3sServerToken pulumi.StringOutput
-
-		// for i := range sleTemplate.Count {
-		// 	serverNum := i + 1
-		// 	resourceName := fmt.Sprintf("sle-server-%d", serverNum)
-		// 	vmName := fmt.Sprintf("%s%d", sleTemplate.VMName, serverNum)
-		// 	serverIP := k3sServerIPs[i]
-		// 	ctx.Log.Info(fmt.Sprintf("Creating SLE K3s server %d with IP %s", serverNum, serverIP), nil)
-
-		// 	sleVM, err := createVMFromTemplate(ctx, provider, resourceName, vmName, proxmoxNode, vmPassword, serverIP+"/24", gateway, sleTemplate.ID, sleTemplate.Memory, sleTemplate.CPU, false)
-		// 	if err != nil {
-		// 		return fmt.Errorf("cannot create SLE VM %s: %w", vmName, err)
-		// 	}
-		// 	sleVMs = append(sleVMs, sleVM)
-
-		// 	if i == 0 {
-		// 		firstServerIP := serverIP
-		// 		k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, firstServerIP, sleVM, true, pulumi.String("").ToStringOutput(), haproxyCmd)
-		// 		if err != nil {
-		// 			return fmt.Errorf("cannot install K3s server on first node %s: %w", firstServerIP, err)
-		// 		}
-		// 		k3sCommands = append(k3sCommands, k3sCmd)
-		// 		tokenCmd, err := getK3sToken(ctx, firstServerIP, vmPassword, k3sCmd)
-		// 		if err != nil {
-		// 			return fmt.Errorf("cannot get K3s token from first server: %w", err)
-		// 		}
-		// 		k3sServerToken = tokenCmd.Stdout
-		// 	} else {
-		// 		k3sCmd, err := installK3SServer(ctx, ubuntuTemplate.IP, vmPassword, serverIP, sleVM, false, k3sServerToken, haproxyCmd)
-		// 		if err != nil {
-		// 			return fmt.Errorf("cannot install K3s on server %s: %w", serverIP, err)
-		// 		}
-		// 		k3sCommands = append(k3sCommands, k3sCmd)
-		// 	}
-		// }
-
-		// ctx.Export("ubuntuVmId", ubuntuVM.ID())
-		// ctx.Export("ubuntuVMName", ubuntuVM.Name)
-		// ctx.Export("number of k3s nodes", pulumi.Int(sleTemplate.Count))
-
-		// for i, sleVM := range sleVMs {
-		// 	ctx.Export(fmt.Sprintf("sleServer%dVmId", i+1), sleVM.VmId)
-		// 	ctx.Export(fmt.Sprintf("sleServer%dVmName", i+1), sleVM.Name)
-		// 	ctx.Export(fmt.Sprintf("k3sServer%dIP", i+1), pulumi.String(k3sServerIPs[i]))
-		// }
-
-		// for i, k3sCmd := range k3sCommands {
-		// 	ctx.Export(fmt.Sprintf("k3sServer%dInstallStatus", i+1), k3sCmd.Stdout)
-		// }
+		err = executeActions(ctx, templates, roleGroups, globalDeps, vmPassword)
+		if err != nil {
+			return fmt.Errorf("failed to execute actions %s", err)
+		}
 		return nil
 	})
 }
