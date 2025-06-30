@@ -8,6 +8,7 @@ import (
 	"github.com/muhlba91/pulumi-proxmoxve/sdk/v7/go/proxmoxve"
 	"github.com/muhlba91/pulumi-proxmoxve/sdk/v7/go/proxmoxve/vm"
 	"github.com/pulumi/pulumi-command/sdk/go/command/remote"
+	"github.com/pulumi/pulumi-local/sdk/go/local"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
@@ -67,7 +68,7 @@ func handleInstallHAProxy(ctx *pulumi.Context, actionctx ActionContext) error {
 	lbVM := actionctx.VMs[0]
 
 	ctx.Log.Info(fmt.Sprintf("installing haproxy on %s with backends: %v", lbIP, k3sServerIPs), nil)
-	ctx.Log.Info(fmt.Sprintf("VM dependency: %s", lbVM.ID()), nil)
+	//	ctx.Log.Info(fmt.Sprintf("VM dependency: %v", lbVM.ID()), nil)
 
 	_, err := installHaProxy(ctx, lbIP, lbVM, k3sServerIPs)
 	if err != nil {
@@ -147,13 +148,13 @@ func checkRequiredEnvVars() error {
 func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmIndex int64, template VMTemplate, nodeName, gateway, password string) (*vm.VirtualMachine, error) {
 	var userAccount *vm.VirtualMachineInitializationUserAccountArgs
 
-	ctx.Log.Info(fmt.Sprintf("Creating VM with auth-method: %s, username: %s, password: %s", template.AuthMethod, template.Username, password), nil)
-	ctx.Log.Info(fmt.Sprintf("Template debug - Role: %s, AuthMethod: '%s', Username: %s", template.Role, template.AuthMethod, template.Username), nil)
+	//	ctx.Log.Info(fmt.Sprintf("Creating VM with auth-method: %s, username: %s, password: %s", template.AuthMethod, template.Username, password), nil)
+	//	ctx.Log.Info(fmt.Sprintf("Template debug - Role: %s, AuthMethod: '%s', Username: %s", template.Role, template.AuthMethod, template.Username), nil)
 
 	if template.AuthMethod == "ssh-key" {
 		sshKey := strings.TrimSpace(os.Getenv("SSH_PUBLIC_KEY"))
-		ctx.Log.Info(fmt.Sprintf("SSH KEY from env first 100 char: %s", sshKey[:100]), nil)
-		ctx.Log.Info(fmt.Sprintf("SSH KEY length: %d", len(sshKey)), nil)
+		//		ctx.Log.Info(fmt.Sprintf("SSH KEY from env first 100 char: %s", sshKey[:100]), nil)
+		//		ctx.Log.Info(fmt.Sprintf("SSH KEY length: %d", len(sshKey)), nil)
 		userAccount = &vm.VirtualMachineInitializationUserAccountArgs{
 			Username: pulumi.String(template.Username),
 			Keys: pulumi.StringArray{
@@ -512,6 +513,15 @@ func handleGetKubeconfig(ctx *pulumi.Context, actionctx ActionContext) error {
 	if err != nil {
 		return fmt.Errorf("failed to get kubeconfig: %w", err)
 	}
+
+	kubeconfigPath := "./kubeconfig"
+	_, err = local.NewFile(ctx, "save-kubeconfig", &local.FileArgs{
+		Filename: pulumi.String(kubeconfigPath),
+		Content:  cmd.Stdout,
+	}, pulumi.DependsOn([]pulumi.Resource{cmd}))
+	if err != nil {
+		return fmt.Errorf("failed to save kubeconfig locally: %w", err)
+	}
 	ctx.Export("kubeconfig", cmd.Stdout)
 	ctx.Log.Info("kubeconfig exported successfully", nil)
 	return nil
@@ -578,5 +588,3 @@ func main() {
 		return nil
 	})
 }
-
-// Helper function to format bytes into human-readable format
