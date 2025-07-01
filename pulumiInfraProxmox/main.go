@@ -207,7 +207,7 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmI
 			&vm.VirtualMachineDiskArgs{
 				Interface: pulumi.String("scsi0"),
 				//	DatastoreId: pulumi.String("nfs-iso"),
-				Size:       pulumi.Int(32), // Match your template's disk size
+				Size:       pulumi.Int(template.DiskSize), // Match your template's disk size
 				FileFormat: pulumi.String("raw"),
 			},
 		},
@@ -231,17 +231,36 @@ func createVMFromTemplate(ctx *pulumi.Context, provider *proxmoxve.Provider, vmI
 			IpConfigs: ipConfig,
 		},
 		Started: pulumi.Bool(true),
-	}, pulumi.Provider(provider))
+		OnBoot:  pulumi.Bool(false),
+	}, pulumi.Provider(provider),
+		pulumi.DeleteBeforeReplace(true),
+		pulumi.IgnoreChanges([]string{"clone"}))
 	if err != nil {
 		return nil, err
 	}
 	return vmInstance, nil
 }
 
-func groupVMsByRole(allVMs []*vm.VirtualMachine, templates []VMTemplate) map[string]RoleGroup {
+func groupVMsByRole(allVMs []*vm.VirtualMachine, templates []VMTemplate) (map[string]RoleGroup, error) {
 	roleGroups := make(map[string]RoleGroup) // map with key string and value of type rolegroup
 	vmIndex := 0
+	expectedVMCount := 0
 
+	for _, template := range templates {
+		count := template.Count
+		if count == 0 {
+			count = 1
+		}
+		if len(template.IPs) < int(count) {
+			return nil, fmt.Errorf("template '%s' role '%s' needs %d IPs but only has %d: %v", template.Name, template.Role, count, len(template.IPs), template.IPs)
+		}
+		expectedVMCount += int(count)
+	}
+	if expectedVMCount != len(allVMs) {
+		return nil, fmt.Errorf("VM count mismatch: expected %d VMs but got %d", expectedVMCount, len(allVMs))
+	}
+
+	// Now safely build the groups
 	for _, template := range templates {
 		count := template.Count
 		if count == 0 {
@@ -258,7 +277,7 @@ func groupVMsByRole(allVMs []*vm.VirtualMachine, templates []VMTemplate) map[str
 			vmIndex++
 		}
 	}
-	return roleGroups
+	return roleGroups, nil
 }
 
 func buildGlobalDependency(roleGroups map[string]RoleGroup) map[string]interface{} {
@@ -324,9 +343,6 @@ EOF
 		
 		# Check HAProxy status
 		sudo systemctl status haproxy --no-pager
-		
-		# Show listening ports
-		sudo netstat -tulpn | grep haproxy
 		
 		echo "HAProxy installed and configured successfully"
 		echo "K3s API accessible via: https://%s:6443"
@@ -560,7 +576,10 @@ func main() {
 			}
 		}
 
-		roleGroups := groupVMsByRole(allVMs, templates)
+		roleGroups, err := groupVMsByRole(allVMs, templates)
+		if err != nil {
+			return fmt.Errorf("cannot group VM by role")
+		}
 		globalDeps := buildGlobalDependency(roleGroups)
 
 		for roleName, group := range roleGroups {
@@ -569,7 +588,7 @@ func main() {
 
 		ctx.Export("totalVMsCreated", pulumi.Int(len(allVMs)))
 		for roleName, group := range roleGroups {
-			ctx.Export(fmt.Sprintf("%s-count", roleName), pulumi.Int(len(allVMs)))
+			ctx.Export(fmt.Sprintf("%s-count", roleName), pulumi.Int(len(group.VMs)))
 			ctx.Export(fmt.Sprintf("%s-ips", roleName), pulumi.StringArray(
 				func() []pulumi.StringInput {
 					result := make([]pulumi.StringInput, len(group.IPs))

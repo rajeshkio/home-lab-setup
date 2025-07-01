@@ -17,6 +17,7 @@ config:
       username: rajeshk
       authMethod: password
       role: k3s-server
+      disksize: 32
       actions:
         - type: "install-k3s-server"
           depends-on: ["loadbalancer"]
@@ -37,6 +38,7 @@ config:
       username: rajeshk
       authMethod: ssh-key
       role: loadbalancer
+      disksize: 32
       actions:
         - type: "install-haproxy"
           config:
