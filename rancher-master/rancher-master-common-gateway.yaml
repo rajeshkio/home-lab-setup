@@ -14,7 +14,7 @@ spec:
       mode: Terminate
       certificateRefs:
         - name: rajesh-tls-cert
-          namespace: cert-manager
+          namespace: cert-manager 
           kind: Secret
     allowedRoutes:
       namespaces:

@@ -47,76 +47,76 @@ spec:
           app-name: gateway 
           path: argocd/kustomize/overlays/rancher-master/gateway/
           namespace: common-gateway
-
-        - cluster: k3s-cluster 
-          app-name: pixiedocs-app
-          path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
-          namespace: gotenberg
-
-        - cluster: k3s-cluster 
-          app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
-          namespace: cattle-neuvector-system
-
-        - cluster: k3s-cluster 
-          app-name: neuvector-httproute
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
-          namespace: cattle-neuvector-system
-
-        - cluster: k3s-cluster 
-          app-name: neuvector-configmaps
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
-          namespace: cattle-neuvector-system
-
-        - cluster: k3s-cluster 
-          app-name: external-dns
-          path: argocd/kustomize/overlays/k3s-cluster/external-dns/
-          namespace: external-dns
-
-        - cluster: k3s-cluster 
-          app-name: rajesh-tls-external-secret 
-          path: argocd/kustomize/overlays/k3s-cluster/rajesh-tls-external-secret/
-          namespace: certificate-ns
-
-        - cluster: k3s-cluster 
-          app-name: external-secrets-config 
-          path: argocd/kustomize/overlays/k3s-cluster/external-secrets-config/
-          namespace: certificate-ns
-
-        - cluster: k3s-cluster 
-          app-name: gateway 
-          path: argocd/kustomize/overlays/k3s-cluster/gateway/
-          namespace: common-gateway
-
-        - cluster: k3s-cluster 
-          app-name: kiali-httproute 
-          path: argocd/kustomize/overlays/k3s-cluster/kiali-httproute
-          namespace: istio-system
-
-        - cluster: k3s-cluster 
-          app-name: istio-config 
-          path: argocd/kustomize/overlays/k3s-cluster/istio-config
-          namespace: istio-system
-
-        - cluster: asus-cluster 
-          app-name: gateway 
-          path: argocd/kustomize/overlays/asus-cluster/gateway/
-          namespace: common-gateway
-
-        - cluster: asus-cluster 
-          app-name: external-dns
-          path: argocd/kustomize/overlays/asus-cluster/external-dns/
-          namespace: external-dns
-
-        - cluster: asus-cluster 
-          app-name: rajesh-tls-external-secret 
-          path: argocd/kustomize/overlays/asus-cluster/rajesh-tls-external-secret/
-          namespace: certificate-ns
-
-        - cluster: asus-cluster 
-          app-name: external-secrets-config 
-          path: argocd/kustomize/overlays/asus-cluster/external-secrets-config/
-          namespace: certificate-ns
+#
+#        - cluster: k3s-cluster 
+#          app-name: pixiedocs-app
+#          path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
+#          namespace: gotenberg
+#
+#        - cluster: k3s-cluster 
+#          app-name: neuvector-external-secret
+#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: k3s-cluster 
+#          app-name: neuvector-httproute
+#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: k3s-cluster 
+#          app-name: neuvector-configmaps
+#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: k3s-cluster 
+#          app-name: external-dns
+#          path: argocd/kustomize/overlays/k3s-cluster/external-dns/
+#          namespace: external-dns
+#
+#        - cluster: k3s-cluster 
+#          app-name: rajesh-tls-external-secret 
+#          path: argocd/kustomize/overlays/k3s-cluster/rajesh-tls-external-secret/
+#          namespace: certificate-ns
+#
+#        - cluster: k3s-cluster 
+#          app-name: external-secrets-config 
+#          path: argocd/kustomize/overlays/k3s-cluster/external-secrets-config/
+#          namespace: certificate-ns
+#
+#        - cluster: k3s-cluster 
+#          app-name: gateway 
+#          path: argocd/kustomize/overlays/k3s-cluster/gateway/
+#          namespace: common-gateway
+#
+#        - cluster: k3s-cluster 
+#          app-name: kiali-httproute 
+#          path: argocd/kustomize/overlays/k3s-cluster/kiali-httproute
+#          namespace: istio-system
+#
+#        - cluster: k3s-cluster 
+#          app-name: istio-config 
+#          path: argocd/kustomize/overlays/k3s-cluster/istio-config
+#          namespace: istio-system
+#
+#        - cluster: asus-cluster 
+#          app-name: gateway 
+#          path: argocd/kustomize/overlays/asus-cluster/gateway/
+#          namespace: common-gateway
+#
+#        - cluster: asus-cluster 
+#          app-name: external-dns
+#          path: argocd/kustomize/overlays/asus-cluster/external-dns/
+#          namespace: external-dns
+#
+#        - cluster: asus-cluster 
+#          app-name: rajesh-tls-external-secret 
+#          path: argocd/kustomize/overlays/asus-cluster/rajesh-tls-external-secret/
+#          namespace: certificate-ns
+#
+#        - cluster: asus-cluster 
+#          app-name: external-secrets-config 
+#          path: argocd/kustomize/overlays/asus-cluster/external-secrets-config/
+#          namespace: certificate-ns
 
   template:
     metadata:

@@ -32,58 +32,58 @@ spec:
         - cluster: rancher-master 
           app-name: vault
           chart: vault
-          targetRevision: 0.30.0 
+          targetRevision: 0.30.1 
           repoURL: 'https://helm.releases.hashicorp.com'
           namespace: vault
 
-        - cluster: k3s-cluster 
-          app-name: neuvector 
-          chart: core
-          targetRevision: 2.8.5 
-          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-          namespace: cattle-neuvector-system
-
-        - cluster: k3s-cluster 
-          app-name: external-secrets 
-          chart: external-secrets 
-          targetRevision: 0.16.1 
-          repoURL: 'https://charts.external-secrets.io'
-          namespace: external-secrets
-
-        - cluster: k3s-cluster 
-          app-name: istio-base
-          chart: base
-          targetRevision: 1.25.2 
-          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-          namespace: istio-system
-
-        - cluster: k3s-cluster 
-          app-name: istiod
-          chart: istiod
-          targetRevision: 1.25.2 
-          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-          namespace: istio-system
-
 #        - cluster: k3s-cluster 
-#          app-name: istio-gateway 
-#          chart: gateway
-#          targetRevision: 1.25.2 
-#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-#          namespace: common-gateway
+#          app-name: neuvector 
+#          chart: core
+#          targetRevision: 2.8.5 
+#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+#          namespace: cattle-neuvector-system
 #
 #        - cluster: k3s-cluster 
-#          app-name: harbor 
-#          chart: harbor 
-#          targetRevision: 1.17.0 
-#          repoURL: 'https://helm.goharbor.io'
-#          namespace: harbor
-
-        - cluster: asus-cluster 
-          app-name: external-secrets 
-          chart: external-secrets 
-          targetRevision: 0.16.1 
-          repoURL: 'https://charts.external-secrets.io'
-          namespace: external-secrets
+#          app-name: external-secrets 
+#          chart: external-secrets 
+#          targetRevision: 0.16.1 
+#          repoURL: 'https://charts.external-secrets.io'
+#          namespace: external-secrets
+#
+#        - cluster: k3s-cluster 
+#          app-name: istio-base
+#          chart: base
+#          targetRevision: 1.25.2 
+#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+#          namespace: istio-system
+#
+#        - cluster: k3s-cluster 
+#          app-name: istiod
+#          chart: istiod
+#          targetRevision: 1.25.2 
+#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+#          namespace: istio-system
+#
+##        - cluster: k3s-cluster 
+##          app-name: istio-gateway 
+##          chart: gateway
+##          targetRevision: 1.25.2 
+##          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+##          namespace: common-gateway
+##
+##        - cluster: k3s-cluster 
+##          app-name: harbor 
+##          chart: harbor 
+##          targetRevision: 1.17.0 
+##          repoURL: 'https://helm.goharbor.io'
+##          namespace: harbor
+#
+#        - cluster: asus-cluster 
+#          app-name: external-secrets 
+#          chart: external-secrets 
+#          targetRevision: 0.16.1 
+#          repoURL: 'https://charts.external-secrets.io'
+#          namespace: external-secrets
 
   template:
     metadata:

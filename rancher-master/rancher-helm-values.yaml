@@ -5,3 +5,4 @@ replicas: 1
 tls: external
 bootstrapPassword: "password"
 agentTLSMode: "strict"
+privateCA: true
