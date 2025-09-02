@@ -7,7 +7,7 @@ controller:
     beta.kubernetes.io/arch: amd64
   apisvc:
     type: ClusterIP 
-  replicas: 1
+  replicas: 3
   federation:
     managedsvc:
       type: ClusterIP
@@ -24,7 +24,7 @@ manager:
     ssl: true 
 cve:
   scanner:
-    replicas: 1
+    replicas: 3
   adapter:
     enabled: true
 crdwebhook:
