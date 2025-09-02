@@ -36,12 +36,12 @@ spec:
           repoURL: 'https://helm.releases.hashicorp.com'
           namespace: vault
 
-#        - cluster: k3s-cluster 
-#          app-name: neuvector 
-#          chart: core
-#          targetRevision: 2.8.5 
-#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-#          namespace: cattle-neuvector-system
+        - cluster: rancher-master 
+          app-name: neuvector 
+          chart: core
+          targetRevision: 2.8.5 
+          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+          namespace: cattle-neuvector-system
 #
 #        - cluster: k3s-cluster 
 #          app-name: external-secrets 

@@ -53,20 +53,20 @@ spec:
 #          path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
 #          namespace: gotenberg
 #
-#        - cluster: k3s-cluster 
-#          app-name: neuvector-external-secret
-#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
-#          namespace: cattle-neuvector-system
-#
-#        - cluster: k3s-cluster 
-#          app-name: neuvector-httproute
-#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
-#          namespace: cattle-neuvector-system
-#
-#        - cluster: k3s-cluster 
-#          app-name: neuvector-configmaps
-#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
-#          namespace: cattle-neuvector-system
+        - cluster: rancher-master 
+          app-name: neuvector-external-secret
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
+          namespace: cattle-neuvector-system
+
+        - cluster: rancher-master 
+          app-name: neuvector-httproute
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
+          namespace: cattle-neuvector-system
+
+        - cluster: rancher-master 
+          app-name: neuvector-configmaps
+          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
+          namespace: cattle-neuvector-system
 #
 #        - cluster: k3s-cluster 
 #          app-name: external-dns
