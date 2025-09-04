@@ -17,7 +17,3 @@ spec:
     backendRefs:
     - name: neuvector-service-webui 
       port: 8443
-      tls:
-        caCertRefs:
-        - kind: Secret
-          name: backend-ca
