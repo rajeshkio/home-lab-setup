@@ -12,7 +12,7 @@ patches:
         path: /spec/parentRefs 
         value:
           - name: common-server-gateway 
-            namespace: common-gateway
+            namespace: common-gateway 
     target:
       kind: HTTPRoute
       name: neuvector-httproute
