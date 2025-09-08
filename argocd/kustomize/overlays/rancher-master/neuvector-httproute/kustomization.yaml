@@ -2,17 +2,17 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../../base/neuvector-httproute
-patches:
-  - patch: |-
-      - op: add
-        path: /spec/hostnames
-        value:
-          - "nv.rajesh-kumar.in"
-      - op: add
-        path: /spec/parentRefs 
-        value:
-          - name: common-server-gateway 
-            namespace: common-gateway 
-    target:
-      kind: HTTPRoute
-      name: neuvector-httproute
+#patches:
+#  - patch: |-
+#      - op: add
+#        path: /spec/hostnames
+#        value:
+#          - "nv.rajesh-kumar.in"
+#      - op: add
+#        path: /spec/parentRefs 
+#        value:
+#          - name: common-server-gateway 
+#            namespace: common-gateway 
+#    target:
+#      kind: HTTPRoute
+#      name: neuvector-httproute
