@@ -9,10 +9,3 @@ spec:
     tls:
       mode: SIMPLE
       insecureSkipVerify: true # Important for self-signed certs
-      sni: neuvector-service-webui.cattle-neuvector-system.svc.cluster.local
-    portLevelSettings:
-    - port:
-        number: 8443
-      tls:
-        mode: SIMPLE
-        insecureSkipVerify: true

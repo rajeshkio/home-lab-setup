@@ -7,7 +7,7 @@ spec:
   hostnames:
   - "nv.rajesh-kumar.in"
   parentRefs:
-  - name: common-server-gateway
+  - name: common-server-gateway-istio 
     namespace: common-gateway
   rules:
   - matches:

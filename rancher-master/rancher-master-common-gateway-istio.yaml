@@ -2,19 +2,19 @@
 apiVersion: gateway.networking.k8s.io/v1 
 kind: Gateway
 metadata:
-  name: rancher-server-gateway
-  namespace: cilium-gateway
+  name: common-server-gateway-istio
+  namespace: common-gateway 
 spec:
-  gatewayClassName: cilium
+  gatewayClassName: istio
   listeners:
   - protocol: HTTPS
     port: 443
-    name: rancher-server-gateway
+    name: common-server-gateway-istio
     tls:
       mode: Terminate
       certificateRefs:
         - name: rajesh-tls-cert
-          namespace: cert-manager 
+          namespace: certificate-ns 
           kind: Secret
     allowedRoutes:
       namespaces:
