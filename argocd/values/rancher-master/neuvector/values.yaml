@@ -17,19 +17,11 @@ controller:
     - name: CTRL_EN_ICMP_POLICY
       value: "1"
   affinity: {}
-  certificate:
-    secret: rajesh-tls-cert
-    keyFile: tls.key
-    pemFile: tls.crt
 manager:
   svc:
     type: ClusterIP 
   env:
     ssl: true 
-  certificate:
-    secret: rajesh-tls-cert
-    keyFile: tls.key
-    pemFile: tls.crt
 cve:
   scanner:
     replicas: 3
