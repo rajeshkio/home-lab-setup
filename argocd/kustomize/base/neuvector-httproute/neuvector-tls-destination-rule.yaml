@@ -8,4 +8,6 @@ spec:
   trafficPolicy:
     tls:
       mode: SIMPLE
-      insecureSkipVerify: true # Important for self-signed certs
+      credentialName: backend-ca
+      sni: neuvector 
+      insecureSkipVerify: false
