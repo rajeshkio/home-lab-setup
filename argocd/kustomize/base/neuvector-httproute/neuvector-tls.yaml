@@ -9,7 +9,7 @@ spec:
   parentRefs:
   - group: gateway.networking.k8s.io
     kind: Gateway
-    name: common-server-gateway-tls-passthrough 
+    name: common-server-gateway-istio 
     namespace: common-gateway
   rules:
   - backendRefs:
@@ -17,4 +17,3 @@ spec:
       kind: Service
       name: neuvector-service-webui 
       port: 8443
-      weight: 1
