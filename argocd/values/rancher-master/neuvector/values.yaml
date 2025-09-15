@@ -1,7 +1,7 @@
 rbac: true
 global:
   cattle:
-    url: https://rancher.rajesh-kumar.in/k8s/clusters/c-m-bx76dsgg 
+    url: https://rancher.rajesh-kumar.in/ 
 controller:
   nodeSelector: 
     beta.kubernetes.io/arch: amd64
