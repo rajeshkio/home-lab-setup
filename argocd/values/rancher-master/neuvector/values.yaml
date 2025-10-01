@@ -22,6 +22,9 @@ manager:
     type: ClusterIP 
   env:
     ssl: true 
+  ingress:
+    enabled: true
+    host: rajesh-nv.rajesh-kumar.com 
 cve:
   scanner:
     replicas: 3

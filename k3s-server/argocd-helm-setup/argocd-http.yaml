@@ -1,20 +1,33 @@
----
 apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+kind: Gateway
 metadata:
-  name: argo-http
-  namespace: argo 
+  name: common-server-gateway-tls-passthrough 
+  namespace: common-gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+  - protocol: TLS 
+    port: 443
+    name: tls-listener
+    tls:
+      mode: Passthrough
+    allowedRoutes:
+      namespaces:
+        from: All
+
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2 
+kind: TLSRoute
+metadata:
+  name: argocd-route
+  namespace: argocd
 spec:
   hostnames:
-  - "argo.rajesh-kumar.in"
+  - "argocd.rajesh-kumar.in"
   parentRefs:
-  - name: k3s-server-gateway
-    namespace: istio-gateway 
+  - name: common-server-gateway-tls-passthrough
+    namespace: common-gateway 
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - name: argo-argocd-server 
-      port: 80
+  - backendRefs:
+    - name: argocd-server
+      port: 443
