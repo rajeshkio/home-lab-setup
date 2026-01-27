@@ -36,6 +36,13 @@ spec:
           repoURL: 'https://helm.goharbor.io'
           namespace: harbor
 
+        - cluster: rancher-master 
+          app-name: cert-manager 
+          chart: cert-manager 
+          targetRevision: 1.19.2 
+          repoURL: 'https://charts.jetstack.io'
+          namespace: cert-manager
+
 #        - cluster: rancher-master 
 #          app-name: neuvector 
 #          chart: core

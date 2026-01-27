@@ -29,8 +29,8 @@ spec:
           namespace: external-secrets
 
         - cluster: rancher-master 
-          app-name: cert-manager 
-          path: argocd/kustomize/overlays/rancher-master/cert-manager
+          app-name: cert-manager-config 
+          path: argocd/kustomize/overlays/rancher-master/cert-manager-config
           namespace: cert-manager
 
         - cluster: rancher-master 
