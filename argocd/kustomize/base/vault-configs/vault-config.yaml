@@ -90,6 +90,14 @@ spec:
             ttl=24h \
             audience=vault
             
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-pusher \
+            bound_service_account_names=cert-pusher \
+            bound_service_account_namespaces=cert-manager \
+            policies=readwrite-policy \
+            ttl=24h \
+            max_ttl=48h \
+            audience=vault
+
           echo "Vault configuration complete!"
         volumeMounts:
         - name: vault-keys

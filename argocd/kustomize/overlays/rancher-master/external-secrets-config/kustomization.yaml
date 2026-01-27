@@ -12,7 +12,7 @@ patches:
       value: "rancher-master"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/role
-      value: "cert-reader"
+      value: "external-secrets"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/serviceAccountRef/name
       value: "rancher-master-external-secrets"
