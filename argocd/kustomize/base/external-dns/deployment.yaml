@@ -33,10 +33,10 @@ spec:
         - name: CF_API_TOKEN 
           valueFrom:
             secretKeyRef:
-              name: cloudflare-api-key
+              name: cloudflare-api-token 
               key: apiKey
         - name: CF_API_EMAIL
           valueFrom:
             secretKeyRef:
-              name: cloudflare-api-key
+              name: cloudflare-api-token
               key: email
