@@ -8,10 +8,10 @@ spec:
   generators:
   - list:
       elements:
-        - cluster: rancher-master 
-          app-name: vault-cert-sync-job
-          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
-          namespace: cert-manager
+#        - cluster: rancher-master 
+#          app-name: vault-cert-sync-job
+#          path: argocd/kustomize/overlays/rancher-master/vault-cert-sync-job/
+#          namespace: cert-manager
 
         - cluster: rancher-master
           app-name: vault-configs
@@ -29,11 +29,6 @@ spec:
           namespace: external-secrets
 
         - cluster: rancher-master 
-          app-name: rancher-httproute
-          path: argocd/kustomize/overlays/rancher-master/rancher-httproute
-          namespace: cattle-system
-
-        - cluster: rancher-master 
           app-name: cert-manager-config 
           path: argocd/kustomize/overlays/rancher-master/cert-manager-config
           namespace: cert-manager
@@ -43,10 +38,6 @@ spec:
           path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
           namespace: homer-app
 
-        - cluster: rancher-master 
-          app-name: gateway 
-          path: argocd/kustomize/overlays/rancher-master/gateway/
-          namespace: common-gateway
 #
 #        - cluster: k3s-cluster 
 #          app-name: pixiedocs-app
@@ -58,15 +49,15 @@ spec:
           path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
           namespace: cattle-neuvector-system
 
-        - cluster: rancher-master 
-          app-name: neuvector-httproute
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
-          namespace: cattle-neuvector-system
-
-        - cluster: rancher-master 
-          app-name: neuvector-configmaps
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
-          namespace: cattle-neuvector-system
+#        - cluster: rancher-master 
+#          app-name: neuvector-httproute
+#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
+#          namespace: cattle-neuvector-system
+#
+#        - cluster: rancher-master 
+#          app-name: neuvector-configmaps
+#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
+#          namespace: cattle-neuvector-system
 #
 #        - cluster: k3s-cluster 
 #          app-name: external-dns

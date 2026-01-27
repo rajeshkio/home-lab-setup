@@ -11,16 +11,9 @@ spec:
         - cluster: rancher-master 
           app-name: external-secrets 
           chart: external-secrets 
-          targetRevision: 0.16.1 
+          targetRevision: 1.3.1 
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
-
-        - cluster: rancher-master 
-          repoURL: 'registry-1.docker.io/bitnamicharts'
-          targetRevision: 1.4.13 
-          app-name: cert-manager 
-          chart: cert-manager
-          namespace: cert-manager 
 
         - cluster: rancher-master 
           app-name: homer-app 
@@ -32,16 +25,23 @@ spec:
         - cluster: rancher-master 
           app-name: vault
           chart: vault
-          targetRevision: 0.30.1 
+          targetRevision: 0.32.0 
           repoURL: 'https://helm.releases.hashicorp.com'
           namespace: vault
 
         - cluster: rancher-master 
-          app-name: neuvector 
-          chart: core
-          targetRevision: 2.8.5 
-          repoURL: 'https://neuvector.github.io/neuvector-helm/'
-          namespace: cattle-neuvector-system
+          app-name: harbor 
+          chart: harbor 
+          targetRevision: 1.18.1 
+          repoURL: 'https://helm.goharbor.io'
+          namespace: harbor
+
+#        - cluster: rancher-master 
+#          app-name: neuvector 
+#          chart: core
+#          targetRevision: 2.8.5 
+#          repoURL: 'https://neuvector.github.io/neuvector-helm/'
+#          namespace: cattle-neuvector-system
 #
 #        - cluster: k3s-cluster 
 #          app-name: external-secrets 
@@ -71,12 +71,6 @@ spec:
 ##          repoURL: 'https://istio-release.storage.googleapis.com/charts'
 ##          namespace: common-gateway
 ##
-##        - cluster: k3s-cluster 
-##          app-name: harbor 
-##          chart: harbor 
-##          targetRevision: 1.17.0 
-##          repoURL: 'https://helm.goharbor.io'
-##          namespace: harbor
 #
 #        - cluster: asus-cluster 
 #          app-name: external-secrets 

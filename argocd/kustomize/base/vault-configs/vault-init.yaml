@@ -9,6 +9,7 @@ metadata:
 spec:
   template:
     spec:
+      serviceAccountName: vault-init
       containers:
       - name: vault-init
         image: hashicorp/vault:1.19

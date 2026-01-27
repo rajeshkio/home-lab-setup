@@ -9,8 +9,8 @@ spec:
   parentRefs:
   - group: gateway.networking.k8s.io
     kind: Gateway
-    name: common-server-gateway 
-    namespace: common-gateway
+    name: rancher-master-gateway 
+    namespace: cilium-gateway
   rules:
   - backendRefs:
     - group: ""
