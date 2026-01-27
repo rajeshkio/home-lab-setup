@@ -33,6 +33,11 @@ spec:
           path: argocd/kustomize/overlays/rancher-master/homer-app-httproute
           namespace: homer-app
 
+        - cluster: rancher-master 
+          app-name: push-secrets
+          path: argocd/kustomize/overlays/rancher-master/push-secrets
+          namespace: certificates
+
 #
 #        - cluster: k3s-cluster 
 #          app-name: pixiedocs-app

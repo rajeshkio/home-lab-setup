@@ -5,4 +5,3 @@ namespace: external-secrets
 resources:
 - cluster-secret-store.yaml
 - externalsecret.yaml
-- pushsecret.yaml
