@@ -4,7 +4,7 @@ metadata:
   name: vault-config
   namespace: vault
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "2"  # Run after init job
 spec:
   template:
     spec:
@@ -18,20 +18,20 @@ spec:
         - /bin/sh
         - -c
         - |
-          # Wait for init job to complete
+          # Wait for init job to complete by checking for token file
           while [ ! -f /vault-keys/root-token.txt ]; do
             echo "Waiting for initialization to complete..."
             sleep 5
           done
           
-          # Get root token
+          # Get root token from volume
           ROOT_TOKEN=$(cat /vault-keys/root-token.txt)
           
-          # Login
+          # Login with root token
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault login $ROOT_TOKEN
           
-          # Enable KV v2 secrets engine for certificates
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault secrets enable -path=certificates -version=2 kv || true
+          # Enable KV secrets engine
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault secrets enable -path=kv -version=2 kv || true
           
           # Enable Kubernetes auth
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault auth enable --path ${VAULT_PREFIX} kubernetes || true
@@ -40,47 +40,56 @@ spec:
           VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/config \
             kubernetes_host="https://kubernetes.default.svc" \
             kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-            token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token \
-            disable_iss_validation=true
+            issuer="https://kubernetes.default.svc.cluster.local"
           
-          # Create cert-pusher policy
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write cert-pusher - <<EOF
-          path "certificates/data/tls/*" {
-            capabilities = ["create", "update", "read"]
+          # Create policies
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write readonly-policy - <<EOF
+          path "kv/*" {
+            capabilities = ["read", "list"]
           }
-          path "certificates/metadata/tls/*" {
+          path "kv/data/*" {
+            capabilities = ["read", "list"]
+          }
+          path "kv/metadata/*" {
             capabilities = ["read", "list"]
           }
           EOF
           
-          # Create cert-reader policy
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write cert-reader - <<EOF
-          path "certificates/data/tls/*" {
-            capabilities = ["read"]
+          # Create readwrite policy
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault policy write readwrite-policy - <<EOF
+          path "kv/*" {
+            capabilities = ["create", "read", "update", "list"]
           }
-          path "certificates/metadata/tls/*" {
+          path "kv/data/*" {
+            capabilities = ["create", "read", "update", "list"]
+          }
+          path "kv/metadata/*" {
             capabilities = ["read", "list"]
           }
           EOF
           
-          # Create cert-pusher role
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-pusher \
-            bound_service_account_names=cert-pusher \
-            bound_service_account_namespaces=cert-manager \
-            policies=cert-pusher \
-            ttl=24h \
-            max_ttl=48h \
-            audience=vault
-          
-          # Create cert-reader role
-          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-reader \
-            bound_service_account_names=external-secrets \
+          # Create roles for each namespace
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-secrets \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
             bound_service_account_namespaces=external-secrets \
-            policies=cert-reader \
+            policies=readonly-policy \
             ttl=24h \
-            max_ttl=48h \
             audience=vault
-          
+            
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/cert-manager \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
+            bound_service_account_namespaces=cert-manager \
+            policies=readwrite-policy \
+            ttl=24h \
+            audience=vault
+            
+          VAULT_ADDR=http://${VAULT_PREFIX}-vault.vault.svc.cluster.local:8200 vault write auth/${VAULT_PREFIX}/role/external-dns \
+            bound_service_account_names=${VAULT_PREFIX}-external-secrets \
+            bound_service_account_namespaces=external-dns \
+            policies=readonly-policy \
+            ttl=24h \
+            audience=vault
+            
           echo "Vault configuration complete!"
         volumeMounts:
         - name: vault-keys
