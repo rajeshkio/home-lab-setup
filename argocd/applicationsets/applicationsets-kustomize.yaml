@@ -8,10 +8,10 @@ spec:
   generators:
   - list:
       elements:
-        - cluster: rancher-master
-          app-name: vault-configs
-          path: argocd/kustomize/overlays/rancher-master/vault-config/
-          namespace: vault  
+#        - cluster: rancher-master
+#          app-name: vault-configs
+#          path: argocd/kustomize/overlays/rancher-master/vault-config/
+#          namespace: vault  
 
         - cluster: rancher-master 
           app-name: external-dns
