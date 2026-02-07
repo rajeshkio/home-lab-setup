@@ -38,11 +38,11 @@ spec:
           path: argocd/kustomize/overlays/rancher-master/push-secrets
           namespace: certificates
 
-        - cluster: rancher-master 
-          app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/suse-ai/neuvector-external-secret/
-          namespace: cattle-neuvector-system
-
+#        - cluster: rancher-master 
+#          app-name: neuvector-external-secret
+#          path: argocd/kustomize/overlays/suse-ai/neuvector-external-secret/
+#          namespace: cattle-neuvector-system
+#
 #        - cluster: rancher-master 
 #          app-name: neuvector-httproute
 #          path: argocd/kustomize/overlays/suse-ai/neuvector-httproute/
