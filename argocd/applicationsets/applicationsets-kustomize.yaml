@@ -59,11 +59,11 @@ spec:
 #          path: argocd/kustomize/overlays/suse-ai/pixiedocs-app/
 #          namespace: gotenberg
 #
-#        - cluster: suse-ai 
-#          app-name: external-dns
-#          path: argocd/kustomize/overlays/suse-ai/external-dns/
-#          namespace: external-dns
-#
+        - cluster: suse-ai 
+          app-name: external-dns
+          path: argocd/kustomize/overlays/suse-ai/external-dns/
+          namespace: external-dns
+
         - cluster: suse-ai 
           app-name: rajesh-tls-external-secret 
           path: argocd/kustomize/overlays/suse-ai/rajesh-tls-external-secret/
