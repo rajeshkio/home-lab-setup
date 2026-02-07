@@ -29,12 +29,12 @@ spec:
           repoURL: 'https://helm.releases.hashicorp.com'
           namespace: vault
 
-        - cluster: rancher-master 
-          app-name: harbor 
-          chart: harbor 
-          targetRevision: 1.18.1 
-          repoURL: 'https://helm.goharbor.io'
-          namespace: harbor
+#        - cluster: rancher-master 
+#          app-name: harbor 
+#          chart: harbor 
+#          targetRevision: 1.18.1 
+#          repoURL: 'https://helm.goharbor.io'
+#          namespace: harbor
 
         - cluster: rancher-master 
           app-name: cert-manager 
@@ -53,31 +53,31 @@ spec:
         - cluster: suse-ai 
           app-name: external-secrets 
           chart: external-secrets 
-          targetRevision: 0.16.1 
+          targetRevision: 2.0.0 
           repoURL: 'https://charts.external-secrets.io'
           namespace: external-secrets
 
-#        - cluster: suse-ai 
-#          app-name: istio-base
-#          chart: base
-#          targetRevision: 1.25.2 
-#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-#          namespace: istio-system
-#
-#        - cluster: suse-ai 
-#          app-name: istiod
-#          chart: istiod
-#          targetRevision: 1.25.2 
-#          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-#          namespace: istio-system
-#
-##        - cluster: suse-ai 
-##          app-name: istio-gateway 
-##          chart: gateway
-##          targetRevision: 1.25.2 
-##          repoURL: 'https://istio-release.storage.googleapis.com/charts'
-##          namespace: common-gateway
-##
+        - cluster: suse-ai 
+          app-name: istio-base
+          chart: base
+          targetRevision: 1.28.3 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
+
+        - cluster: suse-ai 
+          app-name: istiod
+          chart: istiod
+          targetRevision: 1.28.3 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: istio-system
+
+        - cluster: suse-ai 
+          app-name: istio-gateway 
+          chart: gateway
+          targetRevision: 1.28.3 
+          repoURL: 'https://istio-release.storage.googleapis.com/charts'
+          namespace: common-gateway
+
 #
 #        - cluster: asus-cluster 
 #          app-name: external-secrets 

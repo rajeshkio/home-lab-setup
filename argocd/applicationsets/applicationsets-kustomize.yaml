@@ -80,11 +80,11 @@ spec:
 #          namespace: common-gateway
 #
 #
-#        - cluster: suse-ai 
-#          app-name: istio-config 
-#          path: argocd/kustomize/overlays/suse-ai/istio-config
-#          namespace: istio-system
-#
+        - cluster: suse-ai 
+          app-name: istio-config 
+          path: argocd/kustomize/overlays/suse-ai/istio-config
+          namespace: istio-system
+
 #        - cluster: asus-cluster 
 #          app-name: gateway 
 #          path: argocd/kustomize/overlays/asus-cluster/gateway/
