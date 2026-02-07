@@ -9,7 +9,7 @@ patches:
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/args/-
-        value: --txt-owner-id=k3s-cluster
+        value: --txt-owner-id=suse-ai
     target:
       kind: Deployment
       name: external-dns

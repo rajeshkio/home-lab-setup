@@ -50,28 +50,28 @@ spec:
 #          repoURL: 'https://neuvector.github.io/neuvector-helm/'
 #          namespace: cattle-neuvector-system
 #
-#        - cluster: k3s-cluster 
-#          app-name: external-secrets 
-#          chart: external-secrets 
-#          targetRevision: 0.16.1 
-#          repoURL: 'https://charts.external-secrets.io'
-#          namespace: external-secrets
-#
-#        - cluster: k3s-cluster 
+        - cluster: suse-ai 
+          app-name: external-secrets 
+          chart: external-secrets 
+          targetRevision: 0.16.1 
+          repoURL: 'https://charts.external-secrets.io'
+          namespace: external-secrets
+
+#        - cluster: suse-ai 
 #          app-name: istio-base
 #          chart: base
 #          targetRevision: 1.25.2 
 #          repoURL: 'https://istio-release.storage.googleapis.com/charts'
 #          namespace: istio-system
 #
-#        - cluster: k3s-cluster 
+#        - cluster: suse-ai 
 #          app-name: istiod
 #          chart: istiod
 #          targetRevision: 1.25.2 
 #          repoURL: 'https://istio-release.storage.googleapis.com/charts'
 #          namespace: istio-system
 #
-##        - cluster: k3s-cluster 
+##        - cluster: suse-ai 
 ##          app-name: istio-gateway 
 ##          chart: gateway
 ##          targetRevision: 1.25.2 

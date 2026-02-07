@@ -8,4 +8,4 @@ spec:
       containers:
       - name: external-dns
         args:
-        - --txt-owner-id=k3s-cluster
+        - --txt-owner-id=suse-ai

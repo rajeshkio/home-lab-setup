@@ -64,7 +64,7 @@ spec:
             capabilities = ["create", "read", "update", "list"]
           }
           path "kv/metadata/*" {
-            capabilities = ["read", "list"]
+            capabilities = ["create", "read", "update", "list"] 
           }
           EOF
           

@@ -9,7 +9,7 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/mountPath
-      value: "k3s-cluster"
+      value: "suse-ai"
     - op: replace
       path: /spec/provider/vault/auth/kubernetes/role
       value: "external-secrets"

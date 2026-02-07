@@ -38,55 +38,51 @@ spec:
           path: argocd/kustomize/overlays/rancher-master/push-secrets
           namespace: certificates
 
-#
-#        - cluster: k3s-cluster 
-#          app-name: pixiedocs-app
-#          path: argocd/kustomize/overlays/k3s-cluster/pixiedocs-app/
-#          namespace: gotenberg
-#
         - cluster: rancher-master 
           app-name: neuvector-external-secret
-          path: argocd/kustomize/overlays/k3s-cluster/neuvector-external-secret/
+          path: argocd/kustomize/overlays/suse-ai/neuvector-external-secret/
           namespace: cattle-neuvector-system
 
 #        - cluster: rancher-master 
 #          app-name: neuvector-httproute
-#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-httproute/
+#          path: argocd/kustomize/overlays/suse-ai/neuvector-httproute/
 #          namespace: cattle-neuvector-system
 #
 #        - cluster: rancher-master 
 #          app-name: neuvector-configmaps
-#          path: argocd/kustomize/overlays/k3s-cluster/neuvector-configmaps/
+#          path: argocd/kustomize/overlays/suse-ai/neuvector-configmaps/
 #          namespace: cattle-neuvector-system
 #
-#        - cluster: k3s-cluster 
+#
+#        - cluster: suse-ai 
+#          app-name: pixiedocs-app
+#          path: argocd/kustomize/overlays/suse-ai/pixiedocs-app/
+#          namespace: gotenberg
+#
+#        - cluster: suse-ai 
 #          app-name: external-dns
-#          path: argocd/kustomize/overlays/k3s-cluster/external-dns/
+#          path: argocd/kustomize/overlays/suse-ai/external-dns/
 #          namespace: external-dns
 #
-#        - cluster: k3s-cluster 
-#          app-name: rajesh-tls-external-secret 
-#          path: argocd/kustomize/overlays/k3s-cluster/rajesh-tls-external-secret/
-#          namespace: certificate-ns
+        - cluster: suse-ai 
+          app-name: rajesh-tls-external-secret 
+          path: argocd/kustomize/overlays/suse-ai/rajesh-tls-external-secret/
+          namespace: certificate-ns
+
+        - cluster: suse-ai 
+          app-name: external-secrets-config 
+          path: argocd/kustomize/overlays/suse-ai/external-secrets-config/
+          namespace: certificate-ns
 #
-#        - cluster: k3s-cluster 
-#          app-name: external-secrets-config 
-#          path: argocd/kustomize/overlays/k3s-cluster/external-secrets-config/
-#          namespace: certificate-ns
-#
-#        - cluster: k3s-cluster 
+#        - cluster: suse-ai 
 #          app-name: gateway 
-#          path: argocd/kustomize/overlays/k3s-cluster/gateway/
+#          path: argocd/kustomize/overlays/suse-ai/gateway/
 #          namespace: common-gateway
 #
-#        - cluster: k3s-cluster 
-#          app-name: kiali-httproute 
-#          path: argocd/kustomize/overlays/k3s-cluster/kiali-httproute
-#          namespace: istio-system
 #
-#        - cluster: k3s-cluster 
+#        - cluster: suse-ai 
 #          app-name: istio-config 
-#          path: argocd/kustomize/overlays/k3s-cluster/istio-config
+#          path: argocd/kustomize/overlays/suse-ai/istio-config
 #          namespace: istio-system
 #
 #        - cluster: asus-cluster 
